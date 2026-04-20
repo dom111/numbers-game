@@ -1,0 +1,28 @@
+{
+    "name": "numbers-game",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Browser-based numbers game built with TypeScript.",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -p tsconfig.json --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "lint": "eslint src",
+        "lint:fix": "eslint src --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.27.0",
+        "@typescript-eslint/eslint-plugin": "^8.32.1",
+        "@typescript-eslint/parser": "^8.32.1",
+        "eslint": "^9.27.0",
+        "eslint-config-prettier": "^10.1.5",
+        "prettier": "^3.5.3",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.32.1",
+        "vite": "^6.3.5"
+    }
+}
