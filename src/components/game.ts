@@ -201,9 +201,9 @@ export class NumbersGameElement extends HTMLElement {
             }
         }
 
-        // Guaranteed-solvable fallback: target matches one of the available numbers.
+        // Guaranteed-solvable fallback: target is the sum of two available numbers.
         const fallbackNumbers = generateNumbers();
-        const fallbackTarget = fallbackNumbers[Math.floor(Math.random() * fallbackNumbers.length)];
+        const fallbackTarget = fallbackNumbers[0] + fallbackNumbers[1];
         return { numbers: fallbackNumbers, target: fallbackTarget };
     }
 
