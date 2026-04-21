@@ -76,7 +76,9 @@
 
 ## Notes
 
-- **Validation solver** should be high priority before scaling the game widely; unwinnable rounds harm player experience
+- **Validation solver** is now in place; unwinnable rounds are avoided by bounded-retry generation with a guaranteed-solvable fallback
+- **Difficulty bands** are enforced by shortest-path length: `easy < 4` steps, `normal > 3` steps
+- **URL hash state** is live for difficulty preselection; the parser/serializer layer is ready for future full game-state sharing
 - **Hint system** now reuses the solver directly; future work should focus on responsiveness and UI polish
 - **Mobile responsiveness** should precede broader distribution
 - Prioritize items that directly improve player experience and reduce frustration

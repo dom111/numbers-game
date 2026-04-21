@@ -67,12 +67,24 @@ Use these instructions for all code changes in this repository.
 ## Round generation and performance
 
 - `New game` must keep UI responsive (loading state is required).
-- Generate solvable rounds; fallback must still be solvable.
+- Generate difficulty-banded rounds using shortest-solution length from the solver:
+    - `easy`: accept rounds with shortest solution `< 4` steps
+    - `normal`: accept rounds with shortest solution `> 3` steps
+- Fallback order when retries exhaust: best solvable out-of-band candidate → guaranteed-solvable target.
+- Log retry-exhaustion diagnostics (attempt counts, elapsed time) to console when falling back.
 - Any async generation timer must be tracked and cleaned up on disconnect.
 - Avoid unbounded memory growth in caches.
     - Keep validator cache bounded (currently capped).
 
-## Input validation and parsing
+## Difficulty and URL state
+
+- Active difficulty is resolved with precedence: `difficulty` attribute > URL hash > default (`normal`).
+- `difficulty` attribute changes must not re-roll numbers or target — only update difficulty + re-render.
+- `onHashChange` must use `resolveDifficulty` and check `source === 'attribute'` before deferring to the attribute; an invalid attribute value must not block hash resolution.
+- `setDifficulty` must not write to the URL hash when `source === 'attribute'`.
+- Difficulty selector uses a per-instance unique `id` (pattern: `difficultySelectorId`) to avoid duplicate ids when multiple `<numbers-game>` elements are on the same page.
+- URL hash utilities (`parseHash`, `serializeHash`, `resolveDifficulty`) live in `src/lib/url-state.ts`.
+- Selector is placed in the main controls row next to `New game`, not above the numbers pool.
 
 - Guard parsing for component attributes:
     - numbers: finite positive integers only
@@ -101,6 +113,7 @@ npm test -- --run
     - `README.md`
     - `TODO.md`
     - `docs/SOLVER_DESIGN.md`
+    - `docs/DIFFICULTY_URL_STATE_DESIGN.md`
 - If behavior and docs conflict, update docs in the same change.
 
 ## Change style guidance

@@ -25,12 +25,12 @@ Add an `easy` difficulty setting now, while designing URL handling so the same p
 - Additional difficulty levels (`medium` / `hard`)
 - URL migration/versioning UI (we only prepare internal hooks)
 
-## Proposed Model
+## Implemented Model
 
-### Core enums/types
+### Core types
 
-- `GameDifficulty = 'normal' | 'easy'`
-- `RoundConfigSource = 'default' | 'hash' | 'attribute'`
+- `GameDifficulty = 'normal' | 'easy'` — in `src/types.ts`
+- `RoundConfigSource = 'default' | 'hash' | 'attribute'` — in `src/types.ts`
 - `ResolvedRoundConfig`:
     - `difficulty: GameDifficulty`
     - `source: RoundConfigSource`
@@ -76,9 +76,9 @@ Diagnostics:
 - Retry exhaustion for `easy`/`normal` logs an informational console message with attempts and elapsed time.
 - Full fallback to guaranteed-solvable logs a warning with attempts and elapsed time.
 
-## Architecture for Future URL Sharing
+## URL State Utilities (`src/lib/url-state.ts`)
 
-Create a dedicated utility module (for example `src/lib/url-state.ts`) with pure functions:
+This module exists and provides pure functions:
 
 - `parseHash(hash: string): Partial<UrlGameState>`
 - `serializeHash(state: UrlGameState): string`
@@ -94,14 +94,15 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 ## Integration Points
 
 - `src/components/game.ts`
-    - Resolve difficulty at startup using attribute + hash
-    - Re-resolve on `hashchange` when no explicit `difficulty` attribute is present
-    - Pass difficulty into new-game generation
-    - Sync selector changes back into hash using `history.replaceState`
+    - Resolves difficulty at startup using attribute + hash via `resolveDifficulty`
+    - Re-resolves on `hashchange` using `source === 'attribute'` check — only defers to attribute when it resolves to a valid difficulty
+    - Passes difficulty into new-game generation
+    - Syncs selector changes back into hash using `history.replaceState`, skipping hash writes when `source === 'attribute'`
+    - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
-    - Add difficulty-related shared types
+    - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`
 - UI
-    - Difficulty selector with `normal`/`easy`
+    - Difficulty selector (`Normal`/`Easy`) in the main controls row next to `New game`
     - Selector updates hash for shareable preselected mode links
 
 ## Testing Plan
@@ -132,8 +133,8 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 
 ## Delivery Plan
 
-1. Add types + URL parser utilities
-2. Integrate difficulty resolution in `game.ts`
-3. Add basic easy-mode generation threshold logic
-4. Add tests for parsing + game integration
-5. Add docs updates (`README.md`, `TODO.md`) when implementation lands
+1. [x] Add types + URL parser utilities
+2. [x] Integrate difficulty resolution in `game.ts`
+3. [x] Add difficulty banding logic with bounded retries and diagnostics
+4. [x] Add tests for parsing + game integration + band boundaries + regression cases
+5. [x] Docs updates (`README.md`, `TODO.md`, `docs/SOLVER_DESIGN.md`)
