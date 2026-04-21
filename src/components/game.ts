@@ -47,6 +47,7 @@
  */
 
 import './numbers.js';
+import './operators.js';
 import './steps.js';
 import './target.js';
 import { validateSolvability } from '../lib/validator.js';
@@ -56,6 +57,7 @@ import type {
     GameWonPayload,
     NumberSelectedPayload,
     NumberToken,
+    OperatorSelectedPayload,
     StepData,
     StepsChangedPayload,
 } from '../types.js';
@@ -141,8 +143,11 @@ export class NumbersGameElement extends HTMLElement {
 
     private generationTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    private readonly topWinBannerId = `numbers-game-win-${Math.random().toString(36).slice(2, 10)}`;
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
+        this.addEventListener('operator-selected', this.onOperatorSelected as EventListener);
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
         this.addEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.addEventListener('click', this.onActionClick as EventListener);
@@ -152,7 +157,9 @@ export class NumbersGameElement extends HTMLElement {
 
     disconnectedCallback(): void {
         this.clearGenerationTimeout();
+        this.clearTopWinBanner();
         this.removeEventListener('number-selected', this.onNumberSelected as EventListener);
+        this.removeEventListener('operator-selected', this.onOperatorSelected as EventListener);
         this.removeEventListener('steps-changed', this.onStepsChanged as EventListener);
         this.removeEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.removeEventListener('click', this.onActionClick as EventListener);
@@ -186,6 +193,39 @@ export class NumbersGameElement extends HTMLElement {
         if (this.generationTimeout !== null) {
             clearTimeout(this.generationTimeout);
             this.generationTimeout = null;
+        }
+    }
+
+    private ensureTopWinBanner(): HTMLParagraphElement | null {
+        if (!document.body) return null;
+
+        let banner = document.getElementById(this.topWinBannerId) as HTMLParagraphElement | null;
+        if (!banner) {
+            banner = document.createElement('p');
+            banner.id = this.topWinBannerId;
+            banner.className = 'game-top-status';
+            document.body.prepend(banner);
+        }
+
+        banner.textContent = 'You won! Start a new game to play again.';
+        return banner;
+    }
+
+    private clearTopWinBanner(): void {
+        const banner = document.getElementById(this.topWinBannerId);
+        if (banner) banner.remove();
+    }
+
+    private maybeScrollTopWinBannerIntoView(): void {
+        const banner = document.getElementById(this.topWinBannerId);
+        if (!banner) return;
+
+        const rect = banner.getBoundingClientRect();
+        const isOutOfView = rect.top < 0 || rect.bottom > window.innerHeight;
+        if (!isOutOfView) return;
+
+        if (typeof banner.scrollIntoView === 'function') {
+            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
@@ -323,6 +363,23 @@ export class NumbersGameElement extends HTMLElement {
         );
     };
 
+    private onOperatorSelected = (event: CustomEvent<OperatorSelectedPayload>): void => {
+        if (this.locked) return;
+
+        const operators = this.querySelector('operator-buttons');
+        if (!operators || !operators.contains(event.target as Node)) return;
+
+        const stepsList = this.querySelector('steps-list');
+        if (!stepsList) return;
+
+        stepsList.dispatchEvent(
+            new CustomEvent<OperatorSelectedPayload>('operator-selected', {
+                bubbles: true,
+                detail: event.detail,
+            })
+        );
+    };
+
     private onStepsChanged = (event: CustomEvent<StepsChangedPayload>): void => {
         if (this.locked) return;
 
@@ -349,7 +406,8 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         const latest = this.steps[this.steps.length - 1];
-        this.locked = Boolean(latest && latest.value === this.target);
+        const becameLocked = Boolean(latest && latest.value === this.target);
+        this.locked = becameLocked;
         if (this.locked && latest) {
             const detail: GameWonPayload = { target: this.target, steps: [...this.steps] };
             this.dispatchEvent(
@@ -358,6 +416,10 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         this.render();
+
+        if (becameLocked) {
+            this.maybeScrollTopWinBannerIntoView();
+        }
     };
 
     private onStepTokenRemove = (event: CustomEvent<StepTokenRemovePayload>): void => {
@@ -368,6 +430,12 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private render(): void {
+        if (this.locked) {
+            this.ensureTopWinBanner();
+        } else {
+            this.clearTopWinBanner();
+        }
+
         const wrapper = document.createElement('section');
         wrapper.className = 'game-board';
 
@@ -432,13 +500,6 @@ export class NumbersGameElement extends HTMLElement {
             hintDisplay.className = 'hint-display';
             hintDisplay.textContent = this.currentHint;
             wrapper.insertBefore(hintDisplay, steps);
-        }
-
-        if (this.locked) {
-            const status = document.createElement('p');
-            status.className = 'game-status';
-            status.textContent = 'You won! Start a new game to play again.';
-            wrapper.append(status);
         }
 
         this.replaceChildren(wrapper);

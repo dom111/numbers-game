@@ -45,6 +45,10 @@ describe('StepsListElement', () => {
         const completed = el.querySelector('step-equation[locked]');
         expect(completed).not.toBeNull();
         expect(completed?.getAttribute('left')).toBe('5');
+
+        const removeButton = el.querySelector('button[data-remove-step-id="step-1"]');
+        expect(removeButton?.textContent).toBe('×');
+        expect(removeButton?.getAttribute('aria-label')).toBe('Remove step');
     });
 
     it('fills active step operands from number-selected/operator-selected events', () => {
@@ -58,7 +62,7 @@ describe('StepsListElement', () => {
         const active = el.querySelector('step-equation[data-role="active"]') as HTMLElement;
         expect(active.getAttribute('left')).toBe('250');
 
-        active.dispatchEvent(
+        el.dispatchEvent(
             new CustomEvent('operator-selected', {
                 bubbles: true,
                 detail: { operator: '-' },
@@ -115,11 +119,7 @@ describe('StepsListElement', () => {
             })
         );
 
-        const activeBeforeOperator = el.querySelector(
-            'step-equation[data-role="active"]'
-        ) as HTMLElement;
-
-        activeBeforeOperator.dispatchEvent(
+        el.dispatchEvent(
             new CustomEvent('operator-selected', {
                 bubbles: true,
                 detail: { operator: '-' },
@@ -240,5 +240,16 @@ describe('StepsListElement', () => {
 
         removeButton.click();
         expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('does not render an active step when locked', () => {
+        el.setAttribute(
+            'steps',
+            JSON.stringify([{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }])
+        );
+        el.setAttribute('locked', '');
+
+        expect(el.querySelectorAll('step-equation[locked]')).toHaveLength(1);
+        expect(el.querySelector('step-equation[data-role="active"]')).toBeNull();
     });
 });

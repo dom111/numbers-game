@@ -157,7 +157,6 @@ h2 {
 /* ── Step ─────────────────────────────────────────────────── */
 
 .step {
-    margin-top: 1.5rem;
     padding: 1rem;
     border: 1px solid var(--gray-200);
     border-radius: 0.75rem;
@@ -240,33 +239,44 @@ h2 {
 }
 
 .step-row {
-    display: grid;
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
 }
 
 .step-remove-button {
-    justify-self: start;
-    border: 1px solid #fca5a5;
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    border: 2px solid #fca5a5;
+    border-radius: 0.5rem;
+    background: #fff;
     color: var(--error);
-    border-radius: 0.4rem;
-    padding: 0.35rem 0.65rem;
+    padding: 0;
     cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1;
     transition: all 0.2s ease;
     box-shadow: var(--shadow-sm);
 }
 
 .step-remove-button:hover {
-    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+    border-color: var(--error);
+    background-color: #fef2f2;
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
 }
 
 .step-remove-button:focus-visible {
     outline: 2px solid var(--error);
     outline-offset: 2px;
+}
+
+.step-remove-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 /* ── Game ─────────────────────────────────────────────────── */
@@ -366,11 +376,15 @@ target-number .number-token {
     font-weight: 500;
 }
 
-.game-status {
-    margin: 1rem 0 0 0;
+.game-top-status {
+    margin: 0 0 1rem 0;
+    padding: 0.75rem 1rem;
     font-weight: 700;
     color: var(--success);
-    font-size: 1.1rem;
+    font-size: 1rem;
+    background: #ecfdf3;
+    border: 1px solid #86efac;
+    border-radius: 0.75rem;
     animation: slideIn 0.3s ease;
 }
 
