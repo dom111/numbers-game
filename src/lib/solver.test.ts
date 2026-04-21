@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { findSolution, isSolvable } from './solver.js';
 
 describe('findSolution', () => {
-    it('returns empty steps when target is already in the starting numbers', () => {
+    it('requires at least one step even when target is already in the starting numbers', () => {
         const result = findSolution([1, 5, 7, 9, 50, 75], 50);
         expect(result.found).toBe(true);
-        expect(result.steps).toHaveLength(0);
+        expect(result.steps.length).toBeGreaterThan(0);
+        expect(result.steps[result.steps.length - 1].value).toBe(50);
     });
 
     it('finds a solution for 5 × 50 = 250', () => {
@@ -72,10 +73,11 @@ describe('findSolution', () => {
     });
 
     it('respects subtraction constraint (left > right)', () => {
-        // 5 - 10 is invalid, should not find a solution through that path
-        const result = findSolution([5, 10], 5); // Only valid via direct match
+        // 5 - 10 is invalid, but 10 - 5 is valid and should be used.
+        const result = findSolution([5, 10], 5);
         expect(result.found).toBe(true);
-        expect(result.steps).toHaveLength(0); // Already in starting set
+        expect(result.steps).toHaveLength(1);
+        expect(result.steps[0]).toMatchObject({ left: 10, operator: '-', right: 5, value: 5 });
     });
 
     it('handles multi-step solutions with mixed operators', () => {
@@ -118,7 +120,7 @@ describe('isSolvable', () => {
         expect(isSolvable([2, 3], 7)).toBe(false);
     });
 
-    it('returns true when target is in the starting set', () => {
+    it('returns true when target is in the starting set but still reachable in one step', () => {
         expect(isSolvable([1, 5, 7, 9, 50, 75], 50)).toBe(true);
     });
 

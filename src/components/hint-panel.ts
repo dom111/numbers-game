@@ -27,7 +27,16 @@ export class HintPanelElement extends HTMLElement {
         if (!raw) return [];
         try {
             const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .map((value) =>
+                    typeof value === 'number'
+                        ? value
+                        : typeof value === 'string'
+                          ? Number.parseInt(value, 10)
+                          : Number.NaN
+                )
+                .filter((value) => Number.isFinite(value) && Number.isInteger(value) && value >= 1);
         } catch {
             return [];
         }
@@ -38,7 +47,9 @@ export class HintPanelElement extends HTMLElement {
      */
     private get targetValue(): number {
         const raw = this.getAttribute('target');
-        return raw ? Number.parseInt(raw, 10) : 0;
+        if (!raw) return 0;
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed >= 1 ? parsed : 0;
     }
 
     /**

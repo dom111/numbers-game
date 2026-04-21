@@ -118,5 +118,24 @@ describe('HintPanelElement', () => {
         const text = el.querySelector('.hint-text')?.textContent;
         expect(text).toContain('Try using');
     });
-});
 
+    it('filters non-numeric and invalid numbers from the numbers attribute', () => {
+        el.setAttribute('numbers', JSON.stringify([5, '50', 'oops', -3, 0, 7.2]));
+        el.setAttribute('target', '250');
+        el.setAttribute('hint-level', HintLevel.NextOperands);
+
+        const text = el.querySelector('.hint-text')?.textContent;
+        expect(text).toContain('Try using');
+        expect(text).toContain('5');
+        expect(text).toContain('50');
+    });
+
+    it('treats an invalid target attribute as unsolved/no hint', () => {
+        el.setAttribute('numbers', JSON.stringify([5, 50]));
+        el.setAttribute('target', 'not-a-number');
+        el.setAttribute('hint-level', HintLevel.NextOperands);
+
+        const text = el.querySelector('.hint-text')?.textContent;
+        expect(text).toContain('No hint available');
+    });
+});

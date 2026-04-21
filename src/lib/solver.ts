@@ -93,6 +93,10 @@ const compareHeuristic = (
 };
 
 const scorePath = (steps: SolverStep[]): [number, number, number, number] => {
+    if (steps.length === 0) {
+        return [0, 0, 0, 0];
+    }
+
     const maxIntermediate = Math.max(...steps.map((step) => step.value));
     const divisionCount = steps.filter((step) => step.operator === '÷').length;
     const multiplicationCount = steps.filter((step) => step.operator === '×').length;
@@ -220,7 +224,11 @@ const createCandidateMoves = (
  * smaller intermediate values and simpler operators within that shortest depth.
  */
 const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep[] | null => {
-    const visited = new Set<string>([getStateKey(tokens)]);
+    const bestStateVisit = new Map<
+        string,
+        { depth: number; score: [number, number, number, number] }
+    >();
+    bestStateVisit.set(getStateKey(tokens), { depth: 0, score: [0, 0, 0, 0] });
     const queue: SolverState[] = [{ tokens, steps: [] }];
     let bestSolution: SolverStep[] | null = null;
     let bestScore: [number, number, number, number] | null = null;
@@ -253,11 +261,21 @@ const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep
             }
 
             const key = getStateKey(move.tokens);
-            if (visited.has(key)) {
+            const nextDepth = nextSteps.length;
+            const nextScore = scorePath(nextSteps);
+            const previousVisit = bestStateVisit.get(key);
+
+            const shouldVisit =
+                !previousVisit ||
+                nextDepth < previousVisit.depth ||
+                (nextDepth === previousVisit.depth &&
+                    compareHeuristic(nextScore, previousVisit.score) < 0);
+
+            if (!shouldVisit) {
                 continue;
             }
 
-            visited.add(key);
+            bestStateVisit.set(key, { depth: nextDepth, score: nextScore });
             queue.push({ tokens: move.tokens, steps: nextSteps });
         }
     }
@@ -273,14 +291,6 @@ const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep
  * @returns A SolverResult with found flag and steps if a solution exists
  */
 export const findSolution = (numbers: number[], target: number): SolverResult => {
-    // Check if the target is already in the starting numbers
-    if (numbers.includes(target)) {
-        return {
-            found: true,
-            steps: [],
-        };
-    }
-
     // Convert starting numbers to solver tokens with unique ids
     const tokens: SolverToken[] = numbers.map((value, index) => ({
         id: `n${index + 1}`,
