@@ -40,6 +40,13 @@
 
 ## Lower Priority
 
+### Copilot Follow-ups
+
+- [ ] **Global operators in win lock state** — Hide or disable `operator-buttons` when the game is locked for clearer UX/a11y parity with gameplay lock rules.
+    - Ref: https://github.com/dom111/numbers-game/pull/2#discussion_r3117763188
+- [ ] **Operator proactive-disable behavior** — Decide whether to wire active-step `left/right` into global `operator-buttons` (for proactive `-` / `÷` disabling) or remove proactive disabling and rely on `= Error` validation state.
+    - Ref: https://github.com/dom111/numbers-game/pull/2#discussion_r3117763111
+
 ### Testing & Quality
 
 - [ ] **Visual/snapshot testing** — Component rendering tests
