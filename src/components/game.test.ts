@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateNumbers, NumbersGameElement } from './game.js';
+import { generateNumbers, isInDifficultyBand, NumbersGameElement } from './game.js';
 
 if (!customElements.get('numbers-game')) {
     customElements.define('numbers-game', NumbersGameElement);
@@ -7,6 +7,14 @@ if (!customElements.get('numbers-game')) {
 
 describe('NumbersGameElement', () => {
     let el: NumbersGameElement;
+
+    const setHash = (hash: string): void => {
+        window.history.replaceState(
+            null,
+            '',
+            `${window.location.pathname}${window.location.search}${hash}`
+        );
+    };
 
     const getActiveStep = (): HTMLElement =>
         el.querySelector('steps-list step-equation[data-role="active"]') as HTMLElement;
@@ -30,12 +38,14 @@ describe('NumbersGameElement', () => {
     };
 
     beforeEach(() => {
+        setHash('');
         el = document.createElement('numbers-game') as NumbersGameElement;
         document.body.appendChild(el);
     });
 
     afterEach(() => {
         el.remove();
+        setHash('');
     });
 
     it('initializes target and six tokens from attributes', () => {
@@ -357,6 +367,57 @@ describe('NumbersGameElement', () => {
             vi.useRealTimers();
         }
     });
+
+    it('preselects easy difficulty from hash', () => {
+        el.remove();
+        setHash('#difficulty=easy');
+
+        el = document.createElement('numbers-game') as NumbersGameElement;
+        document.body.appendChild(el);
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe('easy');
+    });
+
+    it('falls back to normal difficulty for invalid hash values', () => {
+        el.remove();
+        setHash('#difficulty=hard');
+
+        el = document.createElement('numbers-game') as NumbersGameElement;
+        document.body.appendChild(el);
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe('normal');
+    });
+
+    it('updates hash when difficulty selector changes', () => {
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+
+        select.value = 'easy';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(window.location.hash).toBe('#difficulty=easy');
+    });
+
+    it('renders difficulty controls inside the main game controls row', () => {
+        const controls = el.querySelector('.game-controls') as HTMLElement;
+        const difficultyControls = el.querySelector('.difficulty-controls') as HTMLElement;
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        const newGameButton = controls.querySelector(
+            'button[data-action="new"]'
+        ) as HTMLButtonElement;
+
+        expect(controls.contains(select)).toBe(true);
+        expect(newGameButton.nextElementSibling).toBe(difficultyControls);
+    });
 });
 
 describe('generateNumbers', () => {
@@ -379,5 +440,19 @@ describe('generateNumbers', () => {
             expect(counts.get(75) ?? 0).toBeLessThanOrEqual(1);
             expect(counts.get(100) ?? 0).toBeLessThanOrEqual(1);
         }
+    });
+});
+
+describe('isInDifficultyBand', () => {
+    it('accepts easy paths shorter than 4 and rejects longer paths', () => {
+        expect(isInDifficultyBand('easy', 1)).toBe(true);
+        expect(isInDifficultyBand('easy', 3)).toBe(true);
+        expect(isInDifficultyBand('easy', 4)).toBe(false);
+    });
+
+    it('accepts normal paths longer than 3 and rejects shorter paths', () => {
+        expect(isInDifficultyBand('normal', 4)).toBe(true);
+        expect(isInDifficultyBand('normal', 6)).toBe(true);
+        expect(isInDifficultyBand('normal', 3)).toBe(false);
     });
 });

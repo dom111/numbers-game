@@ -50,9 +50,11 @@ import './numbers.js';
 import './operators.js';
 import './steps.js';
 import './target.js';
-import { validateSolvability } from '../lib/validator.js';
+import { findSolution } from '../lib/solver.js';
 import { getHint, HintLevel } from '../lib/hint-engine.js';
+import { resolveDifficulty, serializeHash } from '../lib/url-state.js';
 import type {
+    GameDifficulty,
     GameNewPayload,
     GameWonPayload,
     NumberSelectedPayload,
@@ -61,6 +63,27 @@ import type {
     StepData,
     StepsChangedPayload,
 } from '../types.js';
+
+const EASY_MAX_STEPS = 3;
+const NORMAL_MIN_STEPS = 4;
+const ROUND_NUMBER_ATTEMPTS = 20;
+const ROUND_TARGET_ATTEMPTS = 20;
+
+type RoundGenerationMetrics = {
+    difficulty: GameDifficulty;
+    attemptedPairs: number;
+    solvablePairs: number;
+    elapsedMs: number;
+    bestCandidateStepCount: number | null;
+};
+
+/** Difficulty acceptance bands are based on shortest solution length. */
+export const isInDifficultyBand = (difficulty: GameDifficulty, stepCount: number): boolean => {
+    if (difficulty === 'easy') {
+        return stepCount <= EASY_MAX_STEPS; // easy < 4
+    }
+    return stepCount >= NORMAL_MIN_STEPS; // normal > 3
+};
 
 type StepTokenRemovePayload = {
     slot: 'left' | 'right';
@@ -119,11 +142,13 @@ const consumeByValue = (tokens: NumberToken[], value: number): void => {
 };
 
 export class NumbersGameElement extends HTMLElement {
-    static readonly observedAttributes = ['target', 'numbers'] as const;
+    static readonly observedAttributes = ['target', 'numbers', 'difficulty'] as const;
 
     private target = 0;
 
     private baseNumbers: number[] = [];
+
+    private difficulty: GameDifficulty = 'normal';
 
     private tokens: NumberToken[] = [];
 
@@ -151,6 +176,8 @@ export class NumbersGameElement extends HTMLElement {
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
         this.addEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.addEventListener('click', this.onActionClick as EventListener);
+        this.addEventListener('change', this.onControlChange as EventListener);
+        window.addEventListener('hashchange', this.onHashChange);
         this.initializeFromAttributes();
         this.render();
     }
@@ -163,6 +190,8 @@ export class NumbersGameElement extends HTMLElement {
         this.removeEventListener('steps-changed', this.onStepsChanged as EventListener);
         this.removeEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.removeEventListener('click', this.onActionClick as EventListener);
+        this.removeEventListener('change', this.onControlChange as EventListener);
+        window.removeEventListener('hashchange', this.onHashChange);
     }
 
     attributeChangedCallback(): void {
@@ -171,13 +200,73 @@ export class NumbersGameElement extends HTMLElement {
     }
 
     private initializeFromAttributes(): void {
+        const resolvedConfig = resolveDifficulty({
+            attributeValue: this.getAttribute('difficulty'),
+            hash: window.location.hash,
+        });
         const parsedTarget = parseTargetAttribute(this.getAttribute('target'));
         const parsedNumbers = parseNumbersAttribute(this.getAttribute('numbers'));
 
+        this.difficulty = resolvedConfig.difficulty;
         this.target = parsedTarget ?? generateTarget();
         this.baseNumbers = parsedNumbers ?? generateNumbers();
         this.resetRoundState();
     }
+
+    private onHashChange = (): void => {
+        // Explicit element attribute keeps precedence over URL hash.
+        if (this.getAttribute('difficulty')) return;
+
+        const resolvedConfig = resolveDifficulty({
+            attributeValue: null,
+            hash: window.location.hash,
+        });
+
+        if (resolvedConfig.difficulty === this.difficulty) return;
+        this.difficulty = resolvedConfig.difficulty;
+        this.render();
+    };
+
+    private setDifficulty = (difficulty: GameDifficulty): void => {
+        if (this.difficulty === difficulty) return;
+        this.difficulty = difficulty;
+
+        const nextHash = serializeHash({ difficulty });
+        if (nextHash === window.location.hash) {
+            this.render();
+            return;
+        }
+
+        const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+        window.history.replaceState(null, '', nextUrl);
+        this.render();
+    };
+
+    private scoreEasySolution = (
+        steps: Array<{ value: number }>
+    ): { stepCount: number; maxIntermediate: number; sumIntermediate: number } => {
+        if (steps.length === 0) {
+            return { stepCount: 0, maxIntermediate: 0, sumIntermediate: 0 };
+        }
+
+        return {
+            stepCount: steps.length,
+            maxIntermediate: Math.max(...steps.map((step) => step.value)),
+            sumIntermediate: steps.reduce((sum, step) => sum + step.value, 0),
+        };
+    };
+
+    private isBetterEasyCandidate = (
+        next: { stepCount: number; maxIntermediate: number; sumIntermediate: number },
+        current: { stepCount: number; maxIntermediate: number; sumIntermediate: number } | null
+    ): boolean => {
+        if (!current) return true;
+        if (next.stepCount !== current.stepCount) return next.stepCount < current.stepCount;
+        if (next.maxIntermediate !== current.maxIntermediate) {
+            return next.maxIntermediate < current.maxIntermediate;
+        }
+        return next.sumIntermediate < current.sumIntermediate;
+    };
 
     private resetRoundState(): void {
         this.steps = [];
@@ -229,21 +318,140 @@ export class NumbersGameElement extends HTMLElement {
         }
     }
 
-    private generateSolvableRound(): { numbers: number[]; target: number } {
-        for (let numberAttempts = 0; numberAttempts < 20; numberAttempts += 1) {
+    private getTimingNow(): number {
+        return typeof performance !== 'undefined' ? performance.now() : Date.now();
+    }
+
+    private logEasyBandExhausted(metrics: RoundGenerationMetrics): void {
+        console.info('[numbers-game] Easy band retries exhausted; using best solvable candidate.', {
+            difficulty: metrics.difficulty,
+            easyBandMaxStepsExclusive: EASY_MAX_STEPS + 1,
+            attemptedPairs: metrics.attemptedPairs,
+            solvablePairs: metrics.solvablePairs,
+            bestCandidateStepCount: metrics.bestCandidateStepCount,
+            elapsedMs: metrics.elapsedMs,
+        });
+    }
+
+    private logNormalBandExhausted(metrics: RoundGenerationMetrics): void {
+        console.info(
+            '[numbers-game] Normal band retries exhausted; using best solvable candidate.',
+            {
+                difficulty: metrics.difficulty,
+                normalBandMinStepsExclusive: NORMAL_MIN_STEPS - 1,
+                attemptedPairs: metrics.attemptedPairs,
+                solvablePairs: metrics.solvablePairs,
+                bestCandidateStepCount: metrics.bestCandidateStepCount,
+                elapsedMs: metrics.elapsedMs,
+            }
+        );
+    }
+
+    private logHardFallbackUsed(metrics: RoundGenerationMetrics): void {
+        console.warn(
+            '[numbers-game] Round retries exhausted; using guaranteed-solvable fallback.',
+            {
+                difficulty: metrics.difficulty,
+                attemptedPairs: metrics.attemptedPairs,
+                solvablePairs: metrics.solvablePairs,
+                elapsedMs: metrics.elapsedMs,
+            }
+        );
+    }
+
+    private generateSolvableRound(difficulty: GameDifficulty): {
+        numbers: number[];
+        target: number;
+    } {
+        const startedAt = this.getTimingNow();
+        let attemptedPairs = 0;
+        let solvablePairs = 0;
+        let bestEasyCandidate: {
+            numbers: number[];
+            target: number;
+            score: { stepCount: number; maxIntermediate: number; sumIntermediate: number };
+        } | null = null;
+        let bestNormalCandidate: {
+            numbers: number[];
+            target: number;
+            stepCount: number;
+        } | null = null;
+
+        for (let numberAttempts = 0; numberAttempts < ROUND_NUMBER_ATTEMPTS; numberAttempts += 1) {
             const numbers = generateNumbers();
 
-            for (let targetAttempts = 0; targetAttempts < 20; targetAttempts += 1) {
+            for (
+                let targetAttempts = 0;
+                targetAttempts < ROUND_TARGET_ATTEMPTS;
+                targetAttempts += 1
+            ) {
+                attemptedPairs += 1;
                 const target = generateTarget();
-                if (validateSolvability(numbers, target)) {
+                const solution = findSolution(numbers, target);
+                if (!solution.found) {
+                    continue;
+                }
+                solvablePairs += 1;
+                const stepCount = solution.steps.length;
+
+                if (isInDifficultyBand(difficulty, stepCount)) {
                     return { numbers, target };
                 }
+
+                if (difficulty === 'easy') {
+                    const score = this.scoreEasySolution(solution.steps);
+                    if (this.isBetterEasyCandidate(score, bestEasyCandidate?.score ?? null)) {
+                        bestEasyCandidate = {
+                            numbers: [...numbers],
+                            target,
+                            score,
+                        };
+                    }
+                    continue;
+                }
+
+                if (!bestNormalCandidate || stepCount > bestNormalCandidate.stepCount) {
+                    bestNormalCandidate = {
+                        numbers: [...numbers],
+                        target,
+                        stepCount,
+                    };
+                }
             }
+        }
+
+        if (difficulty === 'easy' && bestEasyCandidate) {
+            this.logEasyBandExhausted({
+                difficulty,
+                attemptedPairs,
+                solvablePairs,
+                bestCandidateStepCount: bestEasyCandidate.score.stepCount,
+                elapsedMs: Math.round(this.getTimingNow() - startedAt),
+            });
+            return { numbers: bestEasyCandidate.numbers, target: bestEasyCandidate.target };
+        }
+
+        if (difficulty === 'normal' && bestNormalCandidate) {
+            this.logNormalBandExhausted({
+                difficulty,
+                attemptedPairs,
+                solvablePairs,
+                bestCandidateStepCount: bestNormalCandidate.stepCount,
+                elapsedMs: Math.round(this.getTimingNow() - startedAt),
+            });
+            return { numbers: bestNormalCandidate.numbers, target: bestNormalCandidate.target };
         }
 
         // Guaranteed-solvable fallback: target is the sum of two available numbers.
         const fallbackNumbers = generateNumbers();
         const fallbackTarget = fallbackNumbers[0] + fallbackNumbers[1];
+        this.logHardFallbackUsed({
+            difficulty,
+            attemptedPairs,
+            solvablePairs,
+            bestCandidateStepCount: null,
+            elapsedMs: Math.round(this.getTimingNow() - startedAt),
+        });
         return { numbers: fallbackNumbers, target: fallbackTarget };
     }
 
@@ -321,7 +529,7 @@ export class NumbersGameElement extends HTMLElement {
                 this.generationTimeout = null;
                 if (!this.isConnected) return;
 
-                const nextRound = this.generateSolvableRound();
+                const nextRound = this.generateSolvableRound(this.difficulty);
                 this.baseNumbers = nextRound.numbers;
                 this.target = nextRound.target;
                 this.resetRoundState();
@@ -337,6 +545,15 @@ export class NumbersGameElement extends HTMLElement {
             }, 10);
             return;
         }
+    };
+
+    private onControlChange = (event: Event): void => {
+        const target = event.target;
+        if (!(target instanceof HTMLSelectElement)) return;
+        if (target.dataset.action !== 'difficulty') return;
+        const nextDifficulty = target.value;
+        if (nextDifficulty !== 'easy' && nextDifficulty !== 'normal') return;
+        this.setDifficulty(nextDifficulty);
     };
 
     private onNumberSelected = (event: CustomEvent<NumberSelectedPayload>): void => {
@@ -456,6 +673,29 @@ export class NumbersGameElement extends HTMLElement {
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
 
+        const difficultyControls = document.createElement('div');
+        difficultyControls.className = 'difficulty-controls';
+
+        const difficultyLabel = document.createElement('label');
+        difficultyLabel.setAttribute('for', 'difficulty-select');
+        difficultyLabel.textContent = 'Difficulty';
+
+        const difficultySelect = document.createElement('select');
+        difficultySelect.id = 'difficulty-select';
+        difficultySelect.dataset.action = 'difficulty';
+
+        const normalOption = document.createElement('option');
+        normalOption.value = 'normal';
+        normalOption.textContent = 'Normal';
+
+        const easyOption = document.createElement('option');
+        easyOption.value = 'easy';
+        easyOption.textContent = 'Easy';
+
+        difficultySelect.append(normalOption, easyOption);
+        difficultySelect.value = this.difficulty;
+        difficultyControls.append(difficultyLabel, difficultySelect);
+
         const pool = document.createElement('numbers-pool');
         const visibleTokens = this.locked
             ? this.tokens.map((token) => ({ ...token, used: true }))
@@ -490,7 +730,7 @@ export class NumbersGameElement extends HTMLElement {
         newGameButton.dataset.action = 'new';
         newGameButton.textContent = 'New game';
 
-        controls.append(resetButton, hintButton, newGameButton);
+        controls.append(resetButton, hintButton, newGameButton, difficultyControls);
 
         wrapper.append(target, pool, operatorsSection, steps, controls);
 

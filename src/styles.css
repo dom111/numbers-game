@@ -299,6 +299,35 @@ h2 {
     color: var(--gray-700);
 }
 
+.difficulty-controls {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.difficulty-controls > label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    font-weight: 600;
+}
+
+.difficulty-controls > select {
+    height: 2.25rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 0 0.65rem;
+    font-size: 0.9rem;
+    color: var(--gray-700);
+}
+
+.difficulty-controls > select:focus-visible {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 1px;
+}
+
 .target-section {
     display: grid;
     gap: 0.5rem;
@@ -319,18 +348,20 @@ target-number {
 
 target-number .number-token {
     width: 4.875rem;
-    height: 4.875rem;
-    font-size: 1.875rem;
+    font-size: 2.8125rem;
     background: none !important;
     box-shadow: none;
-    color: var(--gray-900);
-    border: 2px solid var(--gray-300);
+    color: var(--primary-dark) !important;
+    border: none !important;
+    opacity: 1 !important;
 }
 
 .game-controls {
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     margin-top: 1rem;
 }
 
@@ -423,6 +454,14 @@ target-number .number-token {
 
     .game-controls {
         gap: 0.5rem;
+    }
+
+    .difficulty-controls {
+        width: 100%;
+    }
+
+    .difficulty-controls > select {
+        min-width: 8rem;
     }
 
     .game-controls > button {

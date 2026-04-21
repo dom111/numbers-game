@@ -9,6 +9,23 @@
  */
 export type Operator = '+' | '-' | '×' | '÷';
 
+/** Supported round difficulty modes. */
+export type GameDifficulty = 'normal' | 'easy';
+
+/** Source used to resolve the active round configuration. */
+export type RoundConfigSource = 'default' | 'hash' | 'attribute';
+
+/** Resolved round config used by the game component. */
+export interface ResolvedRoundConfig {
+    difficulty: GameDifficulty;
+    source: RoundConfigSource;
+}
+
+/** URL-backed game state (phase 1: difficulty only). */
+export interface UrlGameState {
+    difficulty: GameDifficulty;
+}
+
 /**
  * A single number token in the game's token pool.
  *

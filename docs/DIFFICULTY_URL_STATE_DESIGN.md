@@ -1,5 +1,13 @@
 # Difficulty + URL State Design
 
+## Status
+
+Phase 1 is now implemented:
+
+- `easy` difficulty is available in the UI.
+- `location.hash` supports `#difficulty=easy|normal` preselection.
+- Parsing and serialization live in `src/lib/url-state.ts` for future URL-sharing expansion.
+
 ## Goal
 
 Add an `easy` difficulty setting now, while designing URL handling so the same parsing/serialization layer can be reused for future full game-state sharing.
@@ -50,21 +58,23 @@ Parser behavior:
 - Unknown difficulty: ignored (fallback to default/next source)
 - Case-insensitive read, normalized output (`easy` / `normal`)
 
-## Easy Mode Strategy
+## Difficulty Banding (Implemented)
 
-Phase 1 target: lower cognitive load while preserving rules.
+Phase 1 uses strict shortest-path bands while preserving all core game rules:
 
-Candidate strategy (recommended):
+- `easy`: accept rounds only when shortest solution length is `< 4` (that is, `<= 3`)
+- `normal`: accept rounds only when shortest solution length is `> 3` (that is, `>= 4`)
 
-1. Generate candidate rounds with the existing solvable-round flow.
-2. Score each solution by:
-    - shortest step count (primary)
-    - small intermediate values (secondary)
-    - simpler operator profile (tertiary)
-3. Accept a round as `easy` only if it meets a threshold (for example <= 3 steps).
-4. If threshold attempts fail, fall back to best-scored solvable round within bounded retries.
+Fallback order after bounded retries:
 
-This avoids changing number-pool rules and keeps the mode child-friendly through solution complexity.
+1. If an in-band candidate is found, return it immediately.
+2. If no in-band candidate is found, return the best solvable out-of-band candidate for the selected mode.
+3. If no solvable candidate is found at all, use the guaranteed-solvable fallback target.
+
+Diagnostics:
+
+- Retry exhaustion for `easy`/`normal` logs an informational console message with attempts and elapsed time.
+- Full fallback to guaranteed-solvable logs a warning with attempts and elapsed time.
 
 ## Architecture for Future URL Sharing
 
@@ -85,13 +95,14 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 
 - `src/components/game.ts`
     - Resolve difficulty at startup using attribute + hash
-    - Re-resolve on `hashchange` if desired (or only on new game; decide in implementation)
+    - Re-resolve on `hashchange` when no explicit `difficulty` attribute is present
     - Pass difficulty into new-game generation
+    - Sync selector changes back into hash using `history.replaceState`
 - `src/types.ts`
     - Add difficulty-related shared types
 - UI
-    - Add difficulty selector with `normal`/`easy`
-    - Keep selector behavior consistent with hash preselection
+    - Difficulty selector with `normal`/`easy`
+    - Selector updates hash for shareable preselected mode links
 
 ## Testing Plan
 
@@ -108,16 +119,16 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
     - hash preselects `easy`
     - invalid hash falls back to default
     - new game respects selected difficulty
-    - easy mode rounds satisfy configured simplicity threshold behavior
+    - difficulty band helper validates `easy < 4` and `normal > 3` boundaries
 
 ## Risks and Mitigations
 
 - **Risk:** Easy generation takes too long.
-  - **Mitigation:** bounded retries + existing loading state + future worker migration.
+    - **Mitigation:** bounded retries + existing loading state + future worker migration.
 - **Risk:** Hash behavior conflicts with future full share links.
-  - **Mitigation:** central parser/serializer API introduced now.
+    - **Mitigation:** central parser/serializer API introduced now.
 - **Risk:** Difficulty meaning drifts over time.
-  - **Mitigation:** explicit threshold constants and tests.
+    - **Mitigation:** explicit threshold constants and tests.
 
 ## Delivery Plan
 
@@ -126,4 +137,3 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 3. Add basic easy-mode generation threshold logic
 4. Add tests for parsing + game integration
 5. Add docs updates (`README.md`, `TODO.md`) when implementation lands
-
