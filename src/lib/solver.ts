@@ -100,38 +100,26 @@ const backtrack = (
     }
 
     // Recursive case: try all pairs of tokens and all operators
+    // Sort pairs by combined value (larger pairs first) for better hint ordering
+    const pairs: Array<[number, number, SolverToken, SolverToken]> = [];
     for (let i = 0; i < tokens.length; i += 1) {
         for (let j = 0; j < tokens.length; j += 1) {
             if (i === j) continue; // Can't use the same token twice
+            pairs.push([i, j, tokens[i], tokens[j]]);
+        }
+    }
+    // Sort by combined value descending (larger numbers first) for more useful hints
+    pairs.sort((a, b) => (b[2].value + b[3].value) - (a[2].value + a[3].value));
 
-            const left = tokens[i];
-            const right = tokens[j];
-            const operators: Operator[] = ['+', '-', '×', '÷'];
+    for (const [i, j, left, right] of pairs) {
+        const operators: Operator[] = ['+', '-', '×', '÷'];
 
-            for (const operator of operators) {
-                const resultValue = evaluate(left.value, operator, right.value);
-                if (resultValue === null) continue; // Invalid operation
+        for (const operator of operators) {
+            const resultValue = evaluate(left.value, operator, right.value);
+            if (resultValue === null) continue; // Invalid operation
 
-                // If result equals target, we found a solution
-                if (resultValue === target) {
-                    const solveStep: SolverStep = {
-                        id: `step-${++stepCounter.count}`,
-                        left: left.value,
-                        operator,
-                        right: right.value,
-                        value: resultValue,
-                    };
-                    return [...history, solveStep];
-                }
-
-                // Otherwise, create a new state and recurse
-                const newTokens = tokens.filter((_, idx) => idx !== i && idx !== j);
-                const newToken: SolverToken = {
-                    id: `result-${stepCounter.count + 1}`,
-                    value: resultValue,
-                };
-                newTokens.push(newToken);
-
+            // If result equals target, we found a solution
+            if (resultValue === target) {
                 const solveStep: SolverStep = {
                     id: `step-${++stepCounter.count}`,
                     left: left.value,
@@ -139,11 +127,28 @@ const backtrack = (
                     right: right.value,
                     value: resultValue,
                 };
+                return [...history, solveStep];
+            }
 
-                const solution = backtrack(newTokens, target, memo, stepCounter, [...history, solveStep]);
-                if (solution) {
-                    return solution;
-                }
+            // Otherwise, create a new state and recurse
+            const newTokens = tokens.filter((_, idx) => idx !== i && idx !== j);
+            const newToken: SolverToken = {
+                id: `result-${stepCounter.count + 1}`,
+                value: resultValue,
+            };
+            newTokens.push(newToken);
+
+            const solveStep: SolverStep = {
+                id: `step-${++stepCounter.count}`,
+                left: left.value,
+                operator,
+                right: right.value,
+                value: resultValue,
+            };
+
+            const solution = backtrack(newTokens, target, memo, stepCounter, [...history, solveStep]);
+            if (solution) {
+                return solution;
             }
         }
     }
@@ -195,4 +200,5 @@ export const isSolvable = (numbers: number[], target: number): boolean => {
     const result = findSolution(numbers, target);
     return result.found;
 };
+
 

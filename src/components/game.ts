@@ -282,6 +282,8 @@ export class NumbersGameElement extends HTMLElement {
         const incoming = event.detail.steps;
         this.steps = [...incoming];
         this.selectedTokenIds = [];
+        this.hintLevel = HintLevel.NextOperands; // Reset hint level on step completion
+        this.currentHint = ''; // Clear any previous hint
 
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
