@@ -231,9 +231,9 @@ export class NumbersGameElement extends HTMLElement {
 
         if (action === 'new') {
             this.baseNumbers = generateNumbers();
-            // Generate a target that's actually solvable
+            // Generate a solvable target with minimal attempts
             let target = generateTarget();
-            for (let attempts = 0; attempts < 20; attempts += 1) {
+            for (let attempts = 0; attempts < 5; attempts += 1) {
                 if (validateSolvability(this.baseNumbers, target)) {
                     break;
                 }

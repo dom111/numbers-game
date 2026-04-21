@@ -94,6 +94,20 @@ describe('findSolution', () => {
         const result = findSolution([2, 2, 2, 2, 2, 2], 12);
         expect(result.found).toBe(true);
     });
+
+    it('finds solution using larger numbers first (better hints)', () => {
+        // Given [1, 5, 7, 9, 50, 75] target 175
+        // Better hint: 5 × 50 = 250, then 250 - 75 = 175
+        // Worse hint: 1 + 5 = 6, then ... (doesn't lead efficiently)
+        const result = findSolution([1, 5, 7, 9, 50, 75], 175);
+        expect(result.found).toBe(true);
+        
+        // First step should use larger numbers (50, 75, or 5+50)
+        const firstStep = result.steps[0];
+        const firstStepNumbers = [firstStep.left, firstStep.right];
+        const hasLargeNumber = firstStepNumbers.some((n) => n >= 50);
+        expect(hasLargeNumber).toBe(true);
+    });
 });
 
 describe('isSolvable', () => {
@@ -114,6 +128,7 @@ describe('isSolvable', () => {
         expect(isSolvable([1, 5, 7, 9, 50, 75], 175)).toBe(true);
     });
 });
+
 
 
 
