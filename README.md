@@ -93,10 +93,16 @@ This repo is configured to deploy to `https://dom111.github.io/numbers-game/` us
 ### Deploy flow
 
 - The workflow at `.github/workflows/deploy.yml` runs on pushes to `main`.
-- It builds the app with Vite and publishes `dist` to GitHub Pages.
+- It runs lint + tests, then builds the app with Vite and publishes `dist` to GitHub Pages.
 - Deployment sets `VITE_BASE_PATH=/numbers-game/` so asset URLs resolve correctly on project pages.
 
 ### PR checks
 
 - The workflow at `.github/workflows/ci.yml` runs on pull requests to `main`.
 - It runs format check, lint, build, and tests so PRs can be gated by required checks.
+
+## Planned: Difficulty + URL modes
+
+- Next feature work introduces a first `easy` difficulty option and URL hash preselection.
+- The hash parsing design is being built for reuse with future full game-state sharing via URL.
+
