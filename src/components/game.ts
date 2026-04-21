@@ -385,9 +385,6 @@ export class NumbersGameElement extends HTMLElement {
             return;
         }
 
-        const heading = document.createElement('h2');
-        heading.textContent = 'Game';
-
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
 
@@ -396,6 +393,9 @@ export class NumbersGameElement extends HTMLElement {
             ? this.tokens.map((token) => ({ ...token, used: true }))
             : this.tokens;
         pool.setAttribute('tokens', JSON.stringify(visibleTokens));
+
+        // Create operators section
+        const operatorsSection = document.createElement('operator-buttons');
 
         const steps = document.createElement('steps-list');
         steps.setAttribute('steps', JSON.stringify(this.steps));
@@ -424,14 +424,14 @@ export class NumbersGameElement extends HTMLElement {
 
         controls.append(resetButton, hintButton, newGameButton);
 
-        wrapper.append(heading, target, pool, steps, controls);
+        wrapper.append(target, pool, operatorsSection, steps, controls);
 
         // Display current hint if available
         if (this.currentHint) {
             const hintDisplay = document.createElement('p');
             hintDisplay.className = 'hint-display';
             hintDisplay.textContent = this.currentHint;
-            wrapper.append(hintDisplay);
+            wrapper.insertBefore(hintDisplay, steps);
         }
 
         if (this.locked) {
