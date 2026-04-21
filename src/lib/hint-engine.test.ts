@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import {
-    HintLevel,
-    type HintGameState,
-    getHint,
-} from './hint-engine.js';
+import { HintLevel, type HintGameState, getHint } from './hint-engine.js';
 
 describe('getHint', () => {
+    const countByValue = (values: number[]): Map<number, number> => {
+        const counts = new Map<number, number>();
+        for (const value of values) {
+            counts.set(value, (counts.get(value) ?? 0) + 1);
+        }
+        return counts;
+    };
+
     const baseState: HintGameState = {
         availableNumbers: [1, 5, 7, 9, 50, 75],
         completedSteps: [],
@@ -35,9 +39,7 @@ describe('getHint', () => {
         expect(hint?.level).toBe(HintLevel.NextOperands);
 
         if (hint?.level === HintLevel.NextOperands) {
-            expect([hint.leftValue, hint.rightValue]).toEqual(
-                expect.arrayContaining([5, 50])
-            );
+            expect([hint.leftValue, hint.rightValue]).toEqual(expect.arrayContaining([5, 50]));
         }
     });
 
@@ -112,6 +114,11 @@ describe('getHint', () => {
         const hint = getHint(baseState, HintLevel.NextStep);
         expect(hint).not.toBeNull();
         expect(hint?.level).toBe(HintLevel.NextStep);
+
+        if (hint?.level === HintLevel.NextStep) {
+            expect([25, 250]).toContain(hint.step.result);
+            expect(hint.step.operator).not.toBe('+');
+        }
     });
 
     it('generates different hints for different levels on same state', () => {
@@ -141,33 +148,35 @@ describe('getHint', () => {
         expect(hint?.level).toBe(HintLevel.FullSolution);
 
         if (hint?.level === HintLevel.FullSolution) {
+            expect(hint.steps).toHaveLength(2);
             // Verify the final step reaches the target
             const lastStep = hint.steps[hint.steps.length - 1];
             expect(lastStep.result).toBe(175);
         }
     });
 
-    it('correctly includes duplicate values from completed steps', () => {
-        // After completing 75 - 50 = 25, we have two 25s available
-        // (the original 25 from starting numbers, and the result 25)
+    it('uses only currently available numbers after 75 - 50 = 25', () => {
+        const availableNumbers = [1, 5, 7, 9, 25];
         const state: HintGameState = {
-            availableNumbers: [1, 5, 7, 9, 50, 75, 25],
+            availableNumbers,
             completedSteps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
-            target: 175, // A solvable target
+            target: 175,
         };
 
-        const hint = getHint(state, HintLevel.FullSolution);
-        // Should find a solution (doesn't matter if 25+25 is in it)
+        const hint = getHint(state, HintLevel.NextOperands);
         expect(hint).not.toBeNull();
-        if (hint?.level === HintLevel.FullSolution) {
-            // The solution should reach the target
-            const lastStep = hint.steps[hint.steps.length - 1];
-            expect(lastStep.result).toBe(175);
+
+        if (hint?.level === HintLevel.NextOperands) {
+            const hintValues = [hint.leftValue, hint.rightValue];
+            const availableCounts = countByValue(availableNumbers);
+            const hintCounts = countByValue(hintValues);
+
+            for (const [value, count] of hintCounts) {
+                expect(count).toBeLessThanOrEqual(availableCounts.get(value) ?? 0);
+            }
+
+            expect(hintValues).not.toEqual([25, 25]);
+            expect(hintValues.every((value) => availableNumbers.includes(value))).toBe(true);
         }
     });
 });
-
-
-
-
-

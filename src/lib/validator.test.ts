@@ -73,4 +73,3 @@ describe('validateSolvability', () => {
         expect(finalCacheSize).toBe(initialCacheSize); // No new cache entry
     });
 });
-

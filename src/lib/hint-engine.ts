@@ -5,11 +5,15 @@
  * progressive guidance: from "next operands" to "next operator" to "full next step".
  */
 
-import { findSolution, type SolverResult } from './solver.js';
+import { findSolution } from './solver.js';
 import type { Operator, StepData } from '../types.js';
 
 /**
  * Represents the current state of the game for hint generation.
+ *
+ * `availableNumbers` must be the values of the tokens that are currently selectable in the UI.
+ * That means completed-step result tokens should already be included here if they are still available,
+ * and must not be reconstructed a second time from `completedSteps`.
  */
 export interface HintGameState {
     availableNumbers: number[];
@@ -86,17 +90,8 @@ export type Hint = OperandsHint | OperatorHint | StepHint | SolutionHint;
  * @returns A hint object, or null if no solution exists or hint cannot be generated
  */
 export const getHint = (gameState: HintGameState, level: HintLevel): Hint | null => {
-    // Reconstruct available tokens by:
-    // 1. Starting with available numbers
-    // 2. Adding results from completed steps that haven't been used yet
-    const availableValues = [...gameState.availableNumbers];
-
-    for (const step of gameState.completedSteps) {
-        availableValues.push(step.value);
-    }
-
-    // Solve from the current state
-    const solverResult = findSolution(availableValues, gameState.target);
+    // Solve from the current currently-available token values only.
+    const solverResult = findSolution([...gameState.availableNumbers], gameState.target);
     if (!solverResult.found) {
         return null;
     }
@@ -152,4 +147,3 @@ export const getHint = (gameState: HintGameState, level: HintLevel): Hint | null
             return null;
     }
 };
-

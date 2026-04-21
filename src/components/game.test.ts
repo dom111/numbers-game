@@ -118,9 +118,7 @@ describe('NumbersGameElement', () => {
 
         const activeStepBeforeRight = getActiveStep();
         (
-            activeStepBeforeRight.querySelector(
-                'button[data-operator="-"]'
-            ) as HTMLButtonElement
+            activeStepBeforeRight.querySelector('button[data-operator="-"]') as HTMLButtonElement
         ).click();
 
         (el.querySelector('numbers-pool #n6 button') as HTMLButtonElement).click();
@@ -231,6 +229,41 @@ describe('NumbersGameElement', () => {
         const tokens = el.querySelectorAll('numbers-pool number-token');
         expect(tokens).toHaveLength(6);
     });
+
+    it('shows a hint that uses only available numbers after 75 - 50 = 25', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
+                },
+            })
+        );
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+        const hintText = el.querySelector('.hint-display')?.textContent ?? '';
+        expect(hintText).toMatch(/^Try using \d+ and \d+$/);
+        expect(hintText).not.toContain('50');
+        expect(hintText).not.toContain('75');
+        expect(hintText).not.toContain('25 and 25');
+    });
+
+    it('prefers a shorter child-friendlier hint path for 175 from 1,5,7,9,50,75', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+        const hintText = el.querySelector('.hint-display')?.textContent ?? '';
+        expect(hintText).not.toBe('75 + 50 = 125');
+        expect(['75 - 50 = 25', '5 × 50 = 250']).toContain(hintText);
+    });
 });
 
 describe('generateNumbers', () => {
@@ -255,10 +288,3 @@ describe('generateNumbers', () => {
         }
     });
 });
-
-
-
-
-
-
-

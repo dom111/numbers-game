@@ -101,5 +101,3 @@ describe('OperatorButtonsElement', () => {
         expect(divideButton.disabled).toBe(true);
     });
 });
-
-

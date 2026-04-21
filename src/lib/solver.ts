@@ -1,11 +1,11 @@
 /**
  * @purpose Core solver engine for the Numbers game.
  *
- * Provides exhaustive backtracking search with memoization to find valid solution paths
- * from a set of starting numbers to a target value using +, -, ×, ÷ operators.
+ * Provides a shortest-path solver that prefers simpler arithmetic when multiple
+ * solutions use the same number of steps.
  */
 
-import type { Operator, StepData } from '../types.js';
+import type { Operator } from '../types.js';
 
 /**
  * Represents an available token in the solver state.
@@ -18,15 +18,25 @@ interface SolverToken {
 
 /**
  * Represents a single equation in a solution path.
- * Mirrors StepData but may be used with internal token ids.
  */
-interface SolverStep {
+export interface SolverStep {
     id: string;
     left: number;
     operator: Operator;
     right: number;
     value: number;
 }
+
+type SolverState = {
+    tokens: SolverToken[];
+    steps: SolverStep[];
+};
+
+type CandidateMove = {
+    tokens: SolverToken[];
+    step: SolverStep;
+    heuristic: [number, number, number, number];
+};
 
 /**
  * Result of a solve attempt.
@@ -61,95 +71,166 @@ const evaluate = (left: number, operator: Operator, right: number): number | nul
 };
 
 /**
- * Generates a canonical memoization key for a set of tokens.
- * Tokens are sorted by value (ascending) then id to create a unique, consistent key.
+ * Generates a canonical state key for a set of tokens.
+ * Token identity does not matter for solving; only the multiset of values matters.
  */
-const getMemoKey = (tokens: SolverToken[]): string => {
-    const sorted = [...tokens].sort((a, b) => (a.value !== b.value ? a.value - b.value : a.id.localeCompare(b.id)));
-    return JSON.stringify(sorted.map((t) => ({ v: t.value, id: t.id })));
+const getStateKey = (tokens: SolverToken[]): string =>
+    [...tokens]
+        .map((token) => token.value)
+        .sort((a, b) => a - b)
+        .join(',');
+
+const compareHeuristic = (
+    left: [number, number, number, number],
+    right: [number, number, number, number]
+): number => {
+    for (let index = 0; index < left.length; index += 1) {
+        if (left[index] !== right[index]) {
+            return left[index] - right[index];
+        }
+    }
+    return 0;
+};
+
+const operatorWeight = (operator: Operator): number => {
+    switch (operator) {
+        case '-':
+            return 0;
+        case '+':
+            return 1;
+        case '×':
+            return 2;
+        case '÷':
+            return 3;
+        default:
+            return 4;
+    }
+};
+
+const shouldSkipOperation = (left: number, operator: Operator, right: number): boolean => {
+    if (operator === '×' && (left === 1 || right === 1)) {
+        return true;
+    }
+
+    if (operator === '÷' && right === 1) {
+        return true;
+    }
+
+    return false;
+};
+
+const createStep = (
+    left: number,
+    operator: Operator,
+    right: number,
+    value: number,
+    stepNumber: number
+): SolverStep => ({
+    id: `step-${stepNumber}`,
+    left,
+    operator,
+    right,
+    value,
+});
+
+const createCandidateMoves = (
+    tokens: SolverToken[],
+    target: number,
+    nextStepNumber: number
+): CandidateMove[] => {
+    const moves: CandidateMove[] = [];
+
+    const addMove = (
+        firstIndex: number,
+        secondIndex: number,
+        left: number,
+        operator: Operator,
+        right: number
+    ): void => {
+        if (shouldSkipOperation(left, operator, right)) {
+            return;
+        }
+
+        const value = evaluate(left, operator, right);
+        if (value === null) return;
+
+        const nextTokens = tokens.filter(
+            (_, index) => index !== firstIndex && index !== secondIndex
+        );
+        nextTokens.push({
+            id: `r-${nextStepNumber}-${firstIndex}-${secondIndex}-${operator}`,
+            value,
+        });
+
+        const nextValues = nextTokens.map((token) => token.value);
+        const maxToken = Math.max(...nextValues);
+        const distanceToTarget = Math.abs(target - value);
+
+        moves.push({
+            tokens: nextTokens,
+            step: createStep(left, operator, right, value, nextStepNumber),
+            heuristic: [maxToken, distanceToTarget, operatorWeight(operator), value],
+        });
+    };
+
+    for (let firstIndex = 0; firstIndex < tokens.length; firstIndex += 1) {
+        for (let secondIndex = firstIndex + 1; secondIndex < tokens.length; secondIndex += 1) {
+            const first = tokens[firstIndex];
+            const second = tokens[secondIndex];
+
+            addMove(firstIndex, secondIndex, first.value, '+', second.value);
+            addMove(firstIndex, secondIndex, first.value, '×', second.value);
+
+            if (first.value > second.value) {
+                addMove(firstIndex, secondIndex, first.value, '-', second.value);
+            } else if (second.value > first.value) {
+                addMove(firstIndex, secondIndex, second.value, '-', first.value);
+            }
+
+            if (second.value !== 0 && first.value % second.value === 0) {
+                addMove(firstIndex, secondIndex, first.value, '÷', second.value);
+            }
+
+            if (
+                first.value !== second.value &&
+                first.value !== 0 &&
+                second.value % first.value === 0
+            ) {
+                addMove(firstIndex, secondIndex, second.value, '÷', first.value);
+            }
+        }
+    }
+
+    moves.sort((left, right) => compareHeuristic(left.heuristic, right.heuristic));
+    return moves;
 };
 
 /**
- * Core backtracking solver.
- * Exhaustively searches for any valid step sequence that produces the target value.
- *
- * @param tokens Available tokens (each with unique id and numeric value)
- * @param target The goal value to reach
- * @param memo Memoization cache of explored token configurations
- * @param stepCounter Running counter for step ids
- * @param history Accumulated steps in the current solution path
- * @returns A solution if found; null otherwise
+ * Returns the shortest human-friendly solution path for the provided tokens.
+ * Breadth-first search guarantees the fewest steps; move ordering then prefers
+ * smaller intermediate values and simpler operators within that shortest depth.
  */
-const backtrack = (
-    tokens: SolverToken[],
-    target: number,
-    memo: Map<string, boolean>,
-    stepCounter: { count: number },
-    history: SolverStep[]
-): SolverStep[] | null => {
-    // Check if we've already explored this token configuration
-    const key = getMemoKey(tokens);
-    if (memo.has(key)) {
-        return null;
-    }
-    memo.set(key, true);
+const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep[] | null => {
+    const visited = new Set<string>([getStateKey(tokens)]);
+    const queue: SolverState[] = [{ tokens, steps: [] }];
 
-    // Base case: if only one token remains, check if it equals the target
-    if (tokens.length === 1 && tokens[0].value === target) {
-        return history;
-    }
+    for (let index = 0; index < queue.length; index += 1) {
+        const state = queue[index];
+        const moves = createCandidateMoves(state.tokens, target, state.steps.length + 1);
 
-    // Recursive case: try all pairs of tokens and all operators
-    // Sort pairs by combined value (larger pairs first) for better hint ordering
-    const pairs: Array<[number, number, SolverToken, SolverToken]> = [];
-    for (let i = 0; i < tokens.length; i += 1) {
-        for (let j = 0; j < tokens.length; j += 1) {
-            if (i === j) continue; // Can't use the same token twice
-            pairs.push([i, j, tokens[i], tokens[j]]);
-        }
-    }
-    // Sort by combined value descending (larger numbers first) for more useful hints
-    pairs.sort((a, b) => (b[2].value + b[3].value) - (a[2].value + a[3].value));
-
-    for (const [i, j, left, right] of pairs) {
-        const operators: Operator[] = ['+', '-', '×', '÷'];
-
-        for (const operator of operators) {
-            const resultValue = evaluate(left.value, operator, right.value);
-            if (resultValue === null) continue; // Invalid operation
-
-            // If result equals target, we found a solution
-            if (resultValue === target) {
-                const solveStep: SolverStep = {
-                    id: `step-${++stepCounter.count}`,
-                    left: left.value,
-                    operator,
-                    right: right.value,
-                    value: resultValue,
-                };
-                return [...history, solveStep];
+        for (const move of moves) {
+            const nextSteps = [...state.steps, move.step];
+            if (move.step.value === target) {
+                return nextSteps;
             }
 
-            // Otherwise, create a new state and recurse
-            const newTokens = tokens.filter((_, idx) => idx !== i && idx !== j);
-            const newToken: SolverToken = {
-                id: `result-${stepCounter.count + 1}`,
-                value: resultValue,
-            };
-            newTokens.push(newToken);
-
-            const solveStep: SolverStep = {
-                id: `step-${++stepCounter.count}`,
-                left: left.value,
-                operator,
-                right: right.value,
-                value: resultValue,
-            };
-
-            const solution = backtrack(newTokens, target, memo, stepCounter, [...history, solveStep]);
-            if (solution) {
-                return solution;
+            const key = getStateKey(move.tokens);
+            if (visited.has(key)) {
+                continue;
             }
+
+            visited.add(key);
+            queue.push({ tokens: move.tokens, steps: nextSteps });
         }
     }
 
@@ -178,10 +259,7 @@ export const findSolution = (numbers: number[], target: number): SolverResult =>
         value,
     }));
 
-    const memo = new Map<string, boolean>();
-    const stepCounter = { count: 0 };
-
-    const steps = backtrack(tokens, target, memo, stepCounter, []);
+    const steps = findShortestSolution(tokens, target);
 
     return {
         found: steps !== null,
@@ -197,8 +275,5 @@ export const findSolution = (numbers: number[], target: number): SolverResult =>
  * @returns true if a valid solution path exists; false otherwise
  */
 export const isSolvable = (numbers: number[], target: number): boolean => {
-    const result = findSolution(numbers, target);
-    return result.found;
+    return findSolution(numbers, target).found;
 };
-
-
