@@ -8,6 +8,7 @@
     - [ ] Disable gameplay buttons while validating
     - [ ] Move validation to a Web Worker for true non-blocking behavior
 - [ ] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
+    - [ ] **In progress** — Design and implement responsive layout, color scheme, typography
 - [x] **Solution validation** — Verify a valid solution exists before starting each round to prevent unwinnable games
 - [x] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress
     - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at 4 levels

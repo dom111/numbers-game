@@ -178,7 +178,10 @@ export class StepEquationElement extends HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.className = 'step';
 
-        const expression = document.createElement('p');
+        const expressionLine = document.createElement('p');
+        expressionLine.className = 'step-expression-line';
+
+        const expression = document.createElement('span');
         expression.className = 'step-expression';
 
         const appendOperandChip = (slot: 'left' | 'right'): void => {
@@ -213,7 +216,7 @@ export class StepEquationElement extends HTMLElement {
         expression.append(` ${this.getAttribute('operator') ?? '•'} `);
         appendOperandChip('right');
 
-        const value = document.createElement('p');
+        const value = document.createElement('span');
         value.className = 'step-value';
         value.textContent = completePayload
             ? `= ${completePayload.value}`
@@ -221,7 +224,8 @@ export class StepEquationElement extends HTMLElement {
               ? '= Error'
               : '= ?';
 
-        wrapper.append(expression, value);
+        expressionLine.append(expression, ' ', value);
+        wrapper.append(expressionLine);
 
         if (!this.hasAttribute('locked')) {
             const operators = document.createElement('operator-buttons');
