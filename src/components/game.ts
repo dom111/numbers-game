@@ -46,7 +46,9 @@
 import './numbers.js';
 import './steps.js';
 import './target.js';
+import './hint-panel.js';
 import { validateSolvability } from '../lib/validator.js';
+import { HintLevel } from '../lib/hint-engine.js';
 import type {
     GameNewPayload,
     GameWonPayload,
@@ -76,16 +78,8 @@ export const generateNumbers = (): number[] => {
     return picks;
 };
 
-/** Generates an inclusive integer target in the range 1..999 that is solvable with the given numbers. */
+/** Generates an inclusive integer target in the range 1..999. */
 export const generateTarget = (numbers?: number[]): number => {
-    for (let attempts = 0; attempts < 100; attempts += 1) {
-        const candidate = Math.floor(Math.random() * 999) + 1;
-        // If no numbers provided, skip validation and return the target
-        if (!numbers || validateSolvability(numbers, candidate)) {
-            return candidate;
-        }
-    }
-    // Fallback: return a value in range
     return Math.floor(Math.random() * 999) + 1;
 };
 
@@ -137,6 +131,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private selectedTokenIds: string[] = [];
 
+    private hintLevel: HintLevel = HintLevel.NextOperands;
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
@@ -173,6 +169,7 @@ export class NumbersGameElement extends HTMLElement {
         this.selectedTokenIds = [];
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
+        this.hintLevel = HintLevel.NextOperands;
     }
 
     private onActionClick = (event: MouseEvent): void => {
@@ -188,10 +185,26 @@ export class NumbersGameElement extends HTMLElement {
             return;
         }
 
+        if (action === 'hint') {
+            // Cycle through hint levels
+            const levels = Object.values(HintLevel);
+            const currentIndex = levels.indexOf(this.hintLevel);
+            this.hintLevel = levels[(currentIndex + 1) % levels.length];
+            this.render();
+            return;
+        }
+
         if (action === 'new') {
-            this.target = generateTarget(this.baseNumbers);
             this.baseNumbers = generateNumbers();
-            this.target = generateTarget(this.baseNumbers);
+            // Generate a target that's actually solvable
+            let target = generateTarget();
+            for (let attempts = 0; attempts < 20; attempts += 1) {
+                if (validateSolvability(this.baseNumbers, target)) {
+                    break;
+                }
+                target = generateTarget();
+            }
+            this.target = target;
             this.resetRoundState();
             const detail: GameNewPayload = { target: this.target, numbers: [...this.baseNumbers] };
             this.dispatchEvent(
@@ -297,14 +310,33 @@ export class NumbersGameElement extends HTMLElement {
         resetButton.dataset.action = 'reset';
         resetButton.textContent = 'Reset board';
 
+        const hintButton = document.createElement('button');
+        hintButton.type = 'button';
+        hintButton.dataset.action = 'hint';
+        hintButton.textContent = 'Hint';
+        hintButton.disabled = this.locked;
+
         const newGameButton = document.createElement('button');
         newGameButton.type = 'button';
         newGameButton.dataset.action = 'new';
         newGameButton.textContent = 'New game';
 
-        controls.append(resetButton, newGameButton);
+        controls.append(resetButton, hintButton, newGameButton);
 
         wrapper.append(heading, target, pool, steps, controls);
+
+        // Add hint panel only in development (skip during testing to avoid solver overhead)
+        if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+            const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
+            if (!this.locked && availableNumbers.length >= 2) {
+                const hint = document.createElement('hint-panel');
+                hint.setAttribute('numbers', JSON.stringify(availableNumbers));
+                hint.setAttribute('target', String(this.target));
+                hint.setAttribute('steps', JSON.stringify(this.steps));
+                hint.setAttribute('hint-level', this.hintLevel);
+                wrapper.append(hint);
+            }
+        }
 
         if (this.locked) {
             const status = document.createElement('p');
