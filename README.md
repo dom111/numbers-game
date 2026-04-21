@@ -94,4 +94,9 @@ This repo is configured to deploy to `https://dom111.github.io/numbers-game/` us
 
 - The workflow at `.github/workflows/deploy.yml` runs on pushes to `main`.
 - It builds the app with Vite and publishes `dist` to GitHub Pages.
-- `vite.config.ts` uses `base: '/numbers-game/'` so asset URLs resolve correctly on project pages.
+- Deployment sets `VITE_BASE_PATH=/numbers-game/` so asset URLs resolve correctly on project pages.
+
+### PR checks
+
+- The workflow at `.github/workflows/ci.yml` runs on pull requests to `main`.
+- It runs format check, lint, build, and tests so PRs can be gated by required checks.
