@@ -46,9 +46,8 @@
 import './numbers.js';
 import './steps.js';
 import './target.js';
-import './hint-panel.js';
 import { validateSolvability } from '../lib/validator.js';
-import { HintLevel } from '../lib/hint-engine.js';
+import { getHint, HintLevel } from '../lib/hint-engine.js';
 import type {
     GameNewPayload,
     GameWonPayload,
@@ -133,6 +132,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private hintLevel: HintLevel = HintLevel.NextOperands;
 
+    private currentHint: string = '';
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
@@ -170,6 +171,7 @@ export class NumbersGameElement extends HTMLElement {
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
         this.hintLevel = HintLevel.NextOperands;
+        this.currentHint = '';
     }
 
     private onActionClick = (event: MouseEvent): void => {
@@ -186,10 +188,43 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'hint') {
-            // Cycle through hint levels
-            const levels = Object.values(HintLevel);
-            const currentIndex = levels.indexOf(this.hintLevel);
-            this.hintLevel = levels[(currentIndex + 1) % levels.length];
+            // Calculate hint on demand
+            const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
+            if (availableNumbers.length >= 2) {
+                const gameState = {
+                    availableNumbers,
+                    completedSteps: this.steps,
+                    target: this.target,
+                };
+                const hint = getHint(gameState, this.hintLevel);
+                
+                // Format hint as text
+                if (hint) {
+                    switch (hint.level) {
+                        case HintLevel.NextOperands:
+                            this.currentHint = `Try using ${hint.leftValue} and ${hint.rightValue}`;
+                            break;
+                        case HintLevel.NextOperator:
+                            this.currentHint = `${hint.leftValue} ${hint.operator} ${hint.rightValue}`;
+                            break;
+                        case HintLevel.NextStep:
+                            this.currentHint = `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
+                            break;
+                        case HintLevel.FullSolution:
+                            this.currentHint = `Full solution: ${hint.steps
+                                .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)
+                                .join(', then ')}`;
+                            break;
+                    }
+                } else {
+                    this.currentHint = 'No hint available.';
+                }
+                
+                // Cycle to next hint level for next press
+                const levels = Object.values(HintLevel);
+                const currentIndex = levels.indexOf(this.hintLevel);
+                this.hintLevel = levels[(currentIndex + 1) % levels.length];
+            }
             this.render();
             return;
         }
@@ -325,17 +360,12 @@ export class NumbersGameElement extends HTMLElement {
 
         wrapper.append(heading, target, pool, steps, controls);
 
-        // Add hint panel only in development (skip during testing to avoid solver overhead)
-        if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-            const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
-            if (!this.locked && availableNumbers.length >= 2) {
-                const hint = document.createElement('hint-panel');
-                hint.setAttribute('numbers', JSON.stringify(availableNumbers));
-                hint.setAttribute('target', String(this.target));
-                hint.setAttribute('steps', JSON.stringify(this.steps));
-                hint.setAttribute('hint-level', this.hintLevel);
-                wrapper.append(hint);
-            }
+        // Display current hint if available
+        if (this.currentHint) {
+            const hintDisplay = document.createElement('p');
+            hintDisplay.className = 'hint-display';
+            hintDisplay.textContent = this.currentHint;
+            wrapper.append(hintDisplay);
         }
 
         if (this.locked) {
