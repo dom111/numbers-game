@@ -1,8 +1,8 @@
 /**
- * @purpose Displays hints in the game UI.
+ * @purpose Displays hints in a standalone panel.
  *
- * Shows progressive hint guidance at configurable levels, helping players
- * understand the next step toward solving the game.
+ * This component remains useful for isolated rendering/tests, but the main
+ * game now computes and displays hints on demand directly from `numbers-game`.
  */
 
 import { getHint, HintLevel, type Hint, type HintGameState } from '../lib/hint-engine.js';
@@ -95,11 +95,12 @@ export class HintPanelElement extends HTMLElement {
             case HintLevel.NextStep:
                 return `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
 
-            case HintLevel.FullSolution:
+            case HintLevel.FullSolution: {
                 const steps = hint.steps
                     .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)
                     .join(', then ');
                 return `Full solution: ${steps}`;
+            }
 
             default:
                 return 'No hint available.';
@@ -124,4 +125,3 @@ export class HintPanelElement extends HTMLElement {
 }
 
 customElements.define('hint-panel', HintPanelElement);
-

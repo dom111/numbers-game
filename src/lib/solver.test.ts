@@ -59,7 +59,7 @@ describe('findSolution', () => {
     it('handles a standard Countdown example: [1, 5, 7, 9, 50, 75] → 175', () => {
         const result = findSolution([1, 5, 7, 9, 50, 75], 175);
         expect(result.found).toBe(true);
-        expect(result.steps.length).toBeGreaterThan(0);
+        expect(result.steps).toHaveLength(2);
 
         const finalStep = result.steps[result.steps.length - 1];
         expect(finalStep.value).toBe(175);
@@ -95,18 +95,16 @@ describe('findSolution', () => {
         expect(result.found).toBe(true);
     });
 
-    it('finds solution using larger numbers first (better hints)', () => {
-        // Given [1, 5, 7, 9, 50, 75] target 175
-        // Better hint: 5 × 50 = 250, then 250 - 75 = 175
-        // Worse hint: 1 + 5 = 6, then ... (doesn't lead efficiently)
+    it('prefers a shortest solution for the standard hint example', () => {
         const result = findSolution([1, 5, 7, 9, 50, 75], 175);
         expect(result.found).toBe(true);
-        
-        // First step should use larger numbers (50, 75, or 5+50)
+
+        expect(result.steps).toHaveLength(2);
+        expect(result.steps.some((step) => step.operator === '÷')).toBe(false);
+
         const firstStep = result.steps[0];
-        const firstStepNumbers = [firstStep.left, firstStep.right];
-        const hasLargeNumber = firstStepNumbers.some((n) => n >= 50);
-        expect(hasLargeNumber).toBe(true);
+        expect(firstStep.value).not.toBe(125);
+        expect([25, 250]).toContain(firstStep.value);
     });
 });
 
@@ -128,7 +126,3 @@ describe('isSolvable', () => {
         expect(isSolvable([1, 5, 7, 9, 50, 75], 175)).toBe(true);
     });
 });
-
-
-
-

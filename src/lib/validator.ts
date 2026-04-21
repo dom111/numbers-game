@@ -33,7 +33,11 @@ const getCacheKey = (numbers: number[], target: number): string => {
  * @param useCache Whether to use the memoization cache (default: true)
  * @returns true if at least one valid solution exists; false otherwise
  */
-export const validateSolvability = (numbers: number[], target: number, useCache = true): boolean => {
+export const validateSolvability = (
+    numbers: number[],
+    target: number,
+    useCache = true
+): boolean => {
     if (!useCache) {
         return isSolvable(numbers, target);
     }
@@ -63,4 +67,3 @@ export const clearSolvabilityCache = (): void => {
 export const getSolvabilityCacheSize = (): number => {
     return solvabilityCache.size;
 };
-

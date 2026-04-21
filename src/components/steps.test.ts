@@ -233,14 +233,12 @@ describe('StepsListElement', () => {
         const handler = vi.fn();
         el.addEventListener('steps-changed', handler);
 
-        const removeButton = el.querySelector('button[data-remove-step-id="step-1"]') as HTMLButtonElement;
+        const removeButton = el.querySelector(
+            'button[data-remove-step-id="step-1"]'
+        ) as HTMLButtonElement;
         expect(removeButton.disabled).toBe(true);
 
         removeButton.click();
         expect(handler).not.toHaveBeenCalled();
     });
 });
-
-
-
-

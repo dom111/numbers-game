@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { HintLevel } from '../lib/hint-engine.js';
 import { HintPanelElement } from './hint-panel.js';
 
@@ -76,7 +76,10 @@ describe('HintPanelElement', () => {
         // Simple solvable state with partial solution
         el.setAttribute('numbers', JSON.stringify([9, 50, 75]));
         el.setAttribute('target', '225');
-        el.setAttribute('steps', JSON.stringify([{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }]));
+        el.setAttribute(
+            'steps',
+            JSON.stringify([{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }])
+        );
         el.setAttribute('hint-level', HintLevel.NextOperands);
 
         const text = el.querySelector('.hint-text')?.textContent;
@@ -118,5 +121,3 @@ describe('HintPanelElement', () => {
         expect(text).toContain('Try using');
     });
 });
-
-

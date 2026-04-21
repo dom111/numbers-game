@@ -41,6 +41,9 @@
  * - Not all six starting numbers are required to be used.
  * - The game is won the moment any step's result equals the target; no further steps may be taken.
  * - The supported operators are addition (+), subtraction (−), multiplication (×), and division (÷).
+ * - Hint calculation is on-demand from the `Hint` button; the button cycles through increasing detail
+ *   and resets after any completed step.
+ * - `New game` shows a temporary loading state while solvability validation runs.
  */
 
 import './numbers.js';
@@ -78,7 +81,7 @@ export const generateNumbers = (): number[] => {
 };
 
 /** Generates an inclusive integer target in the range 1..999. */
-export const generateTarget = (numbers?: number[]): number => {
+export const generateTarget = (_numbers?: number[]): number => {
     return Math.floor(Math.random() * 999) + 1;
 };
 
@@ -199,7 +202,7 @@ export class NumbersGameElement extends HTMLElement {
                     target: this.target,
                 };
                 const hint = getHint(gameState, this.hintLevel);
-                
+
                 // Format hint as text
                 if (hint) {
                     switch (hint.level) {
@@ -221,7 +224,7 @@ export class NumbersGameElement extends HTMLElement {
                 } else {
                     this.currentHint = 'No hint available.';
                 }
-                
+
                 // Cycle to next hint level for next press
                 const levels = Object.values(HintLevel);
                 const currentIndex = levels.indexOf(this.hintLevel);
@@ -234,7 +237,7 @@ export class NumbersGameElement extends HTMLElement {
         if (action === 'new') {
             this.isGenerating = true;
             this.render(); // Show loading state
-            
+
             // Use setTimeout to allow UI to update before heavy computation
             setTimeout(() => {
                 this.baseNumbers = generateNumbers();
@@ -249,7 +252,10 @@ export class NumbersGameElement extends HTMLElement {
                 this.target = target;
                 this.resetRoundState();
                 this.isGenerating = false;
-                const detail: GameNewPayload = { target: this.target, numbers: [...this.baseNumbers] };
+                const detail: GameNewPayload = {
+                    target: this.target,
+                    numbers: [...this.baseNumbers],
+                };
                 this.dispatchEvent(
                     new CustomEvent<GameNewPayload>('game-new', { bubbles: true, detail })
                 );
@@ -335,11 +341,11 @@ export class NumbersGameElement extends HTMLElement {
         if (this.isGenerating) {
             const heading = document.createElement('h2');
             heading.textContent = 'Loading...';
-            
+
             const loadingMessage = document.createElement('p');
             loadingMessage.className = 'loading-message';
             loadingMessage.textContent = 'Generating new game...';
-            
+
             wrapper.append(heading, loadingMessage);
             this.replaceChildren(wrapper);
             return;

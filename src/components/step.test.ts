@@ -67,25 +67,22 @@ describe('StepEquationElement', () => {
         ['left, right, operator', ['left', 'right', 'operator']],
         ['operator, left, right', ['operator', 'left', 'right']],
         ['left, operator, right', ['left', 'operator', 'right']],
-    ] as const)(
-        'completes and renders value for input order %s',
-        (_label, order) => {
-            const handler = vi.fn();
-            el.addEventListener('step-complete', handler);
+    ] as const)('completes and renders value for input order %s', (_label, order) => {
+        const handler = vi.fn();
+        el.addEventListener('step-complete', handler);
 
-            applyOrder(el, [...order]);
+        applyOrder(el, [...order]);
 
-            expect(handler).toHaveBeenCalledOnce();
-            expect(handler.mock.calls[0][0].detail).toEqual({
-                id: 'step-1',
-                left: 5,
-                operator: '×',
-                right: 50,
-                value: 250,
-            });
-            expect(el.querySelector('.step-value')?.textContent).toBe('= 250');
-        }
-    );
+        expect(handler).toHaveBeenCalledOnce();
+        expect(handler.mock.calls[0][0].detail).toEqual({
+            id: 'step-1',
+            left: 5,
+            operator: '×',
+            right: 50,
+            value: 250,
+        });
+        expect(el.querySelector('.step-value')?.textContent).toBe('= 250');
+    });
 
     it('does not emit step-complete for invalid subtraction', () => {
         const handler = vi.fn();
