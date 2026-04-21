@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { OperatorButtonsElement } from './operators.js';
 import { StepEquationElement } from './step.js';
 
-if (!customElements.get('operator-buttons')) {
-    customElements.define('operator-buttons', OperatorButtonsElement);
-}
 if (!customElements.get('step-equation')) {
     customElements.define('step-equation', StepEquationElement);
 }
@@ -123,17 +119,8 @@ describe('StepEquationElement', () => {
         expect(clearedHandler.mock.calls[0][0].detail).toEqual({ id: 'step-1' });
     });
 
-    it('updates the operator attribute from operator-selected events', () => {
-        const operators = el.querySelector('operator-buttons') as HTMLElement;
-
-        operators.dispatchEvent(
-            new CustomEvent('operator-selected', {
-                bubbles: true,
-                detail: { operator: '+' },
-            })
-        );
-
-        expect(el.getAttribute('operator')).toBe('+');
+    it('does not render local operator buttons', () => {
+        expect(el.querySelector('operator-buttons')).toBeNull();
     });
 
     it('shows computed value text when valid', () => {

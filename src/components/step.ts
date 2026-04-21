@@ -39,7 +39,6 @@
  * - The `value` is not provisional — it only exists once the step is complete and valid.
  */
 
-import './operators.js';
 import type { Operator, StepClearedPayload, StepCompletePayload } from '../types.js';
 
 const parsePositiveInt = (value: string | null): number | null => {
@@ -83,12 +82,7 @@ export class StepEquationElement extends HTMLElement {
     private lastCompleteKey: string | null = null;
 
     connectedCallback(): void {
-        this.addEventListener('operator-selected', this.onOperatorSelected as EventListener);
         this.sync();
-    }
-
-    disconnectedCallback(): void {
-        this.removeEventListener('operator-selected', this.onOperatorSelected as EventListener);
     }
 
     attributeChangedCallback(): void {
@@ -110,11 +104,6 @@ export class StepEquationElement extends HTMLElement {
     private get operatorValue(): Operator | null {
         return parseOperator(this.getAttribute('operator'));
     }
-
-    private onOperatorSelected = (event: CustomEvent<{ operator: Operator }>): void => {
-        if (this.hasAttribute('locked')) return;
-        this.setAttribute('operator', event.detail.operator);
-    };
 
     private getCompletePayload(): StepCompletePayload | null {
         const left = this.leftValue;
@@ -226,13 +215,6 @@ export class StepEquationElement extends HTMLElement {
 
         expressionLine.append(expression, ' ', value);
         wrapper.append(expressionLine);
-
-        if (!this.hasAttribute('locked')) {
-            const operators = document.createElement('operator-buttons');
-            if (this.leftValue !== null) operators.setAttribute('left', String(this.leftValue));
-            if (this.rightValue !== null) operators.setAttribute('right', String(this.rightValue));
-            wrapper.append(operators);
-        }
 
         this.replaceChildren(wrapper);
     }

@@ -23,8 +23,9 @@ describe('NumbersGameElement', () => {
                 continue;
             }
 
-            const activeStep = getActiveStep();
-            (activeStep.querySelector('button[data-operator="×"]') as HTMLButtonElement).click();
+            (
+                el.querySelector('operator-buttons button[data-operator="×"]') as HTMLButtonElement
+            ).click();
         }
     };
 
@@ -79,6 +80,55 @@ describe('NumbersGameElement', () => {
             'steps-list button[data-remove-step-id="step-1"]'
         ) as HTMLButtonElement;
         expect(removeStepButton.disabled).toBe(true);
+        expect(el.querySelector('steps-list step-equation[data-role="active"]')).toBeNull();
+
+        const topStatus = document.body.querySelector('.game-top-status');
+        expect(topStatus?.textContent).toBe('You won! Start a new game to play again.');
+        expect(el.querySelector('.game-status')).toBeNull();
+    });
+
+    it('smooth-scrolls to the top win banner when it is out of view', () => {
+        el.setAttribute('target', '250');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+        const scrollSpy = vi.fn();
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+            value: scrollSpy,
+            configurable: true,
+            writable: true,
+        });
+        const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+            x: 0,
+            y: -20,
+            width: 0,
+            height: 10,
+            top: -20,
+            right: 0,
+            bottom: -10,
+            left: 0,
+            toJSON: () => ({}),
+        } as DOMRect);
+
+        try {
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }],
+                    },
+                })
+            );
+
+            expect(scrollSpy).toHaveBeenCalledOnce();
+        } finally {
+            rectSpy.mockRestore();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+                value: originalScrollIntoView,
+                configurable: true,
+                writable: true,
+            });
+        }
     });
 
     it('emits game-reset and restores round state with same target/numbers', () => {
@@ -87,9 +137,7 @@ describe('NumbersGameElement', () => {
 
         (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
         (
-            el.querySelector(
-                'steps-list step-equation[data-role="active"] button[data-operator="×"]'
-            ) as HTMLButtonElement
+            el.querySelector('operator-buttons button[data-operator="×"]') as HTMLButtonElement
         ).click();
         (el.querySelector('numbers-pool #n5 button') as HTMLButtonElement).click();
 
@@ -116,9 +164,8 @@ describe('NumbersGameElement', () => {
 
         (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
 
-        const activeStepBeforeRight = getActiveStep();
         (
-            activeStepBeforeRight.querySelector('button[data-operator="-"]') as HTMLButtonElement
+            el.querySelector('operator-buttons button[data-operator="-"]') as HTMLButtonElement
         ).click();
 
         (el.querySelector('numbers-pool #n6 button') as HTMLButtonElement).click();
@@ -216,7 +263,9 @@ describe('NumbersGameElement', () => {
         el.setAttribute('numbers', '1,5,7,9,50,75');
 
         (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
-        (getActiveStep().querySelector('button[data-operator="÷"]') as HTMLButtonElement).click();
+        (
+            el.querySelector('operator-buttons button[data-operator="÷"]') as HTMLButtonElement
+        ).click();
         (el.querySelector('numbers-pool #n3 button') as HTMLButtonElement).click(); // 5 ÷ 7 invalid
 
         const active = getActiveStep();

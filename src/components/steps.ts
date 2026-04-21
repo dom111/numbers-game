@@ -164,6 +164,7 @@ export class StepsListElement extends HTMLElement {
     };
 
     private onOperatorSelected = (event: CustomEvent<OperatorSelectedPayload>): void => {
+        if (event.target !== this) return;
         if (this.isLocked) return;
 
         this.activeStep.operator = event.detail.operator;
@@ -253,36 +254,37 @@ export class StepsListElement extends HTMLElement {
             removeButton.type = 'button';
             removeButton.className = 'step-remove-button';
             removeButton.dataset.removeStepId = step.id;
-            removeButton.textContent = 'Remove step';
+            removeButton.setAttribute('aria-label', 'Remove step');
+            removeButton.title = 'Remove step';
+            removeButton.textContent = '×';
             removeButton.disabled = this.isLocked;
 
             row.append(completed, removeButton);
             wrapper.append(row);
         }
 
-        const active = document.createElement('step-equation');
-        active.dataset.role = 'active';
-        active.setAttribute('id', this.activeStep.id);
-        if (this.isLocked) {
-            active.setAttribute('locked', '');
-        }
-        if (this.activeStep.left !== null) {
-            active.setAttribute('left', String(this.activeStep.left));
-        }
-        if (this.activeStep.leftTokenId !== null) {
-            active.setAttribute('left-token-id', this.activeStep.leftTokenId);
-        }
-        if (this.activeStep.operator !== null) {
-            active.setAttribute('operator', this.activeStep.operator);
-        }
-        if (this.activeStep.right !== null) {
-            active.setAttribute('right', String(this.activeStep.right));
-        }
-        if (this.activeStep.rightTokenId !== null) {
-            active.setAttribute('right-token-id', this.activeStep.rightTokenId);
-        }
+        if (!this.isLocked) {
+            const active = document.createElement('step-equation');
+            active.dataset.role = 'active';
+            active.setAttribute('id', this.activeStep.id);
+            if (this.activeStep.left !== null) {
+                active.setAttribute('left', String(this.activeStep.left));
+            }
+            if (this.activeStep.leftTokenId !== null) {
+                active.setAttribute('left-token-id', this.activeStep.leftTokenId);
+            }
+            if (this.activeStep.operator !== null) {
+                active.setAttribute('operator', this.activeStep.operator);
+            }
+            if (this.activeStep.right !== null) {
+                active.setAttribute('right', String(this.activeStep.right));
+            }
+            if (this.activeStep.rightTokenId !== null) {
+                active.setAttribute('right-token-id', this.activeStep.rightTokenId);
+            }
 
-        wrapper.append(active);
+            wrapper.append(active);
+        }
         this.replaceChildren(wrapper);
     }
 }
