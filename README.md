@@ -66,7 +66,22 @@ Invalid means:
 
 - `New game` shows a loading state while a fresh round is generated.
 - The app retries target generation to prefer solvable rounds.
+- Difficulty can be chosen as `Normal` or `Easy` from the game UI.
+- Difficulty bands are based on shortest-solution length from the solver:
+    - `Easy`: shortest path must be `< 4` steps
+    - `Normal`: shortest path must be `> 3` steps
+- If retries exhaust without finding an in-band round, the game uses the best solvable candidate found
+  and logs a console diagnostic with attempt counts and elapsed time.
+- If no solvable candidate is found within retries, the game falls back to a guaranteed-solvable target.
 - Validation currently runs on the main thread; moving it to a worker remains a future performance improvement.
+
+## Difficulty + URL hash
+
+- The active mode can be preselected with hash params:
+    - `#difficulty=easy`
+    - `#difficulty=normal`
+- Resolution precedence is: `difficulty` attribute on `<numbers-game>` > URL hash > default (`normal`).
+- Changing the selector updates the hash with `history.replaceState` so links can be shared without page reload.
 
 ## Development
 
@@ -101,8 +116,7 @@ This repo is configured to deploy to `https://dom111.github.io/numbers-game/` us
 - The workflow at `.github/workflows/ci.yml` runs on pull requests to `main`.
 - It runs format check, lint, build, and tests so PRs can be gated by required checks.
 
-## Planned: Difficulty + URL modes
+## Planned: URL game-state sharing
 
-- Next feature work introduces a first `easy` difficulty option and URL hash preselection.
-- The hash parsing design is being built for reuse with future full game-state sharing via URL.
-
+- Current hash support includes difficulty selection only.
+- Next phase extends the same parser/serializer layer for full round/state sharing via URL.

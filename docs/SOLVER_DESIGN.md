@@ -111,6 +111,7 @@ Use a canonical representation of available token values (sorted ascending) to c
 - [x] Check solvability while generating new rounds and retry target selection
 - [x] Connect hint UI to hint engine
 - [x] Display hints on demand in the game UI
+- [x] Reuse shortest-path results for `easy` difficulty round selection
 
 ## Performance Considerations
 
@@ -158,6 +159,11 @@ Use a canonical representation of available token values (sorted ascending) to c
 - Hint progression cycles through operands → operator → step → full solution.
 - Completing a step resets hint progression back to the first level.
 - New-round validation still runs on the main thread; a Web Worker is the next logical performance upgrade.
+- Difficulty bands are enforced from shortest-path length:
+    - `easy` accepts `< 4` steps
+    - `normal` accepts `> 3` steps
+- If retries exhaust without an in-band result, generation falls back to best available solvable candidate and
+  logs retry diagnostics.
 
 ## Future Enhancements
 

@@ -30,11 +30,14 @@
 - [ ] **Undo last step** — Allow reverting the most recent step without full reset
 - [ ] **Replay mode** — Show step-by-step walkthrough of a solution after winning
 - [ ] **Difficulty levels**
-    - [ ] **Easy mode (next)** — Add an easy difficulty option (likely extra available numbers and/or simpler shortest-path solutions)
+    - [x] **Easy mode** — Add easy difficulty option that prefers short/simple solvable rounds
     - [ ] Medium/Hard follow-ups after easy mode is stable
 - [ ] **Game statistics** — Track games played, win rate, fastest completion times
 - [ ] **URL sharing** — Encode current game state in URL for sharing specific rounds
-    - [ ] First step: support URL hash preselection for difficulty (`#difficulty=easy`) using reusable parser logic
+    - [x] First step: support URL hash preselection for difficulty (`#difficulty=easy`) using reusable parser logic
+    - [ ] Extend hash state to include numbers + target for round links
+    - [ ] Extend hash state to include steps/hint state for full in-progress sharing
+- [ ] Using the date as a seed for daily challenges
 
 ### Game Logic Enhancements
 
