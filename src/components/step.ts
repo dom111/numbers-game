@@ -207,6 +207,9 @@ export class StepEquationElement extends HTMLElement {
 
         const value = document.createElement('span');
         value.className = 'step-value';
+        if (hasError) {
+            value.classList.add('error');
+        }
         value.textContent = completePayload
             ? `= ${completePayload.value}`
             : hasError

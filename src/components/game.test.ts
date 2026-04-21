@@ -271,6 +271,7 @@ describe('NumbersGameElement', () => {
         const active = getActiveStep();
         expect(active.getAttribute('id')).toBe('step-1');
         expect(active.querySelector('.step-value')?.textContent).toBe('= Error');
+        expect(active.querySelector('.step-value')?.classList.contains('error')).toBe(true);
 
         const completedSteps = el.querySelectorAll('steps-list step-equation[locked]');
         expect(completedSteps).toHaveLength(0);

@@ -160,6 +160,7 @@ describe('StepEquationElement', () => {
         el.setAttribute('right', '3');
 
         expect(el.querySelector('.step-value')?.textContent).toBe('= Error');
+        expect(el.querySelector('.step-value')?.classList.contains('error')).toBe(true);
     });
 
     it('emits step-token-remove when clicking a selected operand chip', () => {
