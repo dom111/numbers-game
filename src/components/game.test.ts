@@ -418,6 +418,42 @@ describe('NumbersGameElement', () => {
         expect(controls.contains(select)).toBe(true);
         expect(newGameButton.nextElementSibling).toBe(difficultyControls);
     });
+
+    it('changing difficulty attribute does not re-roll numbers or target', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        const targetBefore = el.querySelector('target-number')?.getAttribute('value');
+        const tokensBefore = Array.from(el.querySelectorAll('numbers-pool number-token')).map(
+            (t) => t.textContent
+        );
+
+        el.setAttribute('difficulty', 'easy');
+
+        const targetAfter = el.querySelector('target-number')?.getAttribute('value');
+        const tokensAfter = Array.from(el.querySelectorAll('numbers-pool number-token')).map(
+            (t) => t.textContent
+        );
+
+        expect(targetAfter).toBe(targetBefore);
+        expect(tokensAfter).toEqual(tokensBefore);
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe('easy');
+    });
+
+    it('invalid difficulty attribute does not prevent hash from taking effect on hashchange', () => {
+        el.setAttribute('difficulty', 'extreme'); // invalid — should not block hash
+        setHash('#difficulty=easy');
+        window.dispatchEvent(new Event('hashchange'));
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe('easy');
+    });
 });
 
 describe('generateNumbers', () => {

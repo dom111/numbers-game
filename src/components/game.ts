@@ -170,6 +170,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private readonly topWinBannerId = `numbers-game-win-${Math.random().toString(36).slice(2, 10)}`;
 
+    private readonly difficultySelectorId = `difficulty-select-${Math.random().toString(36).slice(2, 10)}`;
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
         this.addEventListener('operator-selected', this.onOperatorSelected as EventListener);
@@ -194,7 +196,18 @@ export class NumbersGameElement extends HTMLElement {
         window.removeEventListener('hashchange', this.onHashChange);
     }
 
-    attributeChangedCallback(): void {
+    attributeChangedCallback(name: string): void {
+        if (name === 'difficulty') {
+            // Difficulty attribute change: only update difficulty + re-render, do not re-roll round.
+            const resolvedConfig = resolveDifficulty({
+                attributeValue: this.getAttribute('difficulty'),
+                hash: window.location.hash,
+            });
+            this.difficulty = resolvedConfig.difficulty;
+            this.render();
+            return;
+        }
+
         this.initializeFromAttributes();
         this.render();
     }
@@ -214,22 +227,32 @@ export class NumbersGameElement extends HTMLElement {
     }
 
     private onHashChange = (): void => {
-        // Explicit element attribute keeps precedence over URL hash.
-        if (this.getAttribute('difficulty')) return;
-
-        const resolvedConfig = resolveDifficulty({
-            attributeValue: null,
+        // Only defer to the attribute when it resolves to a valid difficulty.
+        const resolved = resolveDifficulty({
+            attributeValue: this.getAttribute('difficulty'),
             hash: window.location.hash,
         });
+        if (resolved.source === 'attribute') return;
 
-        if (resolvedConfig.difficulty === this.difficulty) return;
-        this.difficulty = resolvedConfig.difficulty;
+        if (resolved.difficulty === this.difficulty) return;
+        this.difficulty = resolved.difficulty;
         this.render();
     };
 
     private setDifficulty = (difficulty: GameDifficulty): void => {
         if (this.difficulty === difficulty) return;
         this.difficulty = difficulty;
+
+        // When the difficulty attribute is present and valid, it is authoritative —
+        // do not write to the URL hash, just re-render to reflect the new value.
+        const resolved = resolveDifficulty({
+            attributeValue: this.getAttribute('difficulty'),
+            hash: window.location.hash,
+        });
+        if (resolved.source === 'attribute') {
+            this.render();
+            return;
+        }
 
         const nextHash = serializeHash({ difficulty });
         if (nextHash === window.location.hash) {
@@ -677,11 +700,11 @@ export class NumbersGameElement extends HTMLElement {
         difficultyControls.className = 'difficulty-controls';
 
         const difficultyLabel = document.createElement('label');
-        difficultyLabel.setAttribute('for', 'difficulty-select');
+        difficultyLabel.setAttribute('for', this.difficultySelectorId);
         difficultyLabel.textContent = 'Difficulty';
 
         const difficultySelect = document.createElement('select');
-        difficultySelect.id = 'difficulty-select';
+        difficultySelect.id = this.difficultySelectorId;
         difficultySelect.dataset.action = 'difficulty';
 
         const normalOption = document.createElement('option');
