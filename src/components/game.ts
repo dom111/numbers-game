@@ -46,6 +46,7 @@
 import './numbers.js';
 import './steps.js';
 import './target.js';
+import { validateSolvability } from '../lib/validator.js';
 import type {
     GameNewPayload,
     GameWonPayload,
@@ -75,8 +76,18 @@ export const generateNumbers = (): number[] => {
     return picks;
 };
 
-/** Generates an inclusive integer target in the range 1..999. */
-export const generateTarget = (): number => Math.floor(Math.random() * 999) + 1;
+/** Generates an inclusive integer target in the range 1..999 that is solvable with the given numbers. */
+export const generateTarget = (numbers?: number[]): number => {
+    for (let attempts = 0; attempts < 100; attempts += 1) {
+        const candidate = Math.floor(Math.random() * 999) + 1;
+        // If no numbers provided, skip validation and return the target
+        if (!numbers || validateSolvability(numbers, candidate)) {
+            return candidate;
+        }
+    }
+    // Fallback: return a value in range
+    return Math.floor(Math.random() * 999) + 1;
+};
 
 const parseNumbersAttribute = (raw: string | null): number[] | null => {
     if (!raw) return null;
@@ -178,8 +189,9 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'new') {
-            this.target = generateTarget();
+            this.target = generateTarget(this.baseNumbers);
             this.baseNumbers = generateNumbers();
+            this.target = generateTarget(this.baseNumbers);
             this.resetRoundState();
             const detail: GameNewPayload = { target: this.target, numbers: [...this.baseNumbers] };
             this.dispatchEvent(
