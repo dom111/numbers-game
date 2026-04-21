@@ -1,0 +1,167 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+    margin: 2rem;
+}
+
+/* ── Number token ─────────────────────────────────────────────── */
+
+.number-token {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 2px solid transparent;
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color 0.15s,
+        opacity 0.15s;
+}
+
+/* Available token */
+.number-token:not(:disabled) {
+    background-color: #2563eb;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+.number-token:not(:disabled):hover {
+    background-color: #1d4ed8;
+}
+
+.number-token:not(:disabled):focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+/* Used / disabled token */
+.number-token:disabled {
+    background-color: #d1d5db;
+    color: #6b7280;
+    border-color: #d1d5db;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.numbers-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* ── Operators ─────────────────────────────────────────────── */
+
+.operators {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.operator-button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.4rem;
+    background: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.operator-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ── Step ─────────────────────────────────────────────────── */
+
+.step {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    max-width: 20rem;
+}
+
+.step-expression,
+.step-value {
+    margin: 0;
+}
+
+.step-chip {
+    border: 1px solid #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 0.35rem;
+    padding: 0 0.35rem;
+    cursor: pointer;
+}
+
+.step-value {
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+.steps-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.step-row {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.step-remove-button {
+    justify-self: start;
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+}
+
+/* ── Game ─────────────────────────────────────────────────── */
+
+.game-board {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.game-board > h2 {
+    margin: 0;
+}
+
+.game-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.game-controls > button {
+    height: 2.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.4rem;
+    background: #fff;
+    padding: 0 0.75rem;
+    cursor: pointer;
+}
+
+.game-status {
+    margin: 0;
+    font-weight: 600;
+    color: #16a34a;
+}

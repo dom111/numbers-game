@@ -8,7 +8,7 @@
  *
  * @fires `number-selected`
  *   Dispatched when an available token is clicked.
- *   Payload: `{ id: string, value: number }`
+ *   Payload: `NumberSelectedPayload` — `{ id: string, value: number }`
  *   Bubbles: yes.
  *
  * @invariants
@@ -18,3 +18,49 @@
  * - Identity is tracked by `id`, not by `value` alone; two tokens may share a value but never an id.
  * - The `used` state is permanent within a round; it cannot be reversed except by a game reset or new game.
  */
+
+import type { NumberSelectedPayload } from '../types.js';
+
+export class NumberTokenElement extends HTMLElement {
+    static readonly observedAttributes = ['value', 'used'] as const;
+
+    connectedCallback(): void {
+        this.render();
+    }
+
+    attributeChangedCallback(): void {
+        this.render();
+    }
+
+    private get tokenValue(): number {
+        return parseInt(this.getAttribute('value') ?? '0', 10);
+    }
+
+    private get isUsed(): boolean {
+        return this.hasAttribute('used');
+    }
+
+    private render(): void {
+        const button = document.createElement('button');
+        button.className = 'number-token';
+        button.textContent = String(this.tokenValue);
+        button.disabled = this.isUsed;
+        button.setAttribute('aria-pressed', String(this.isUsed));
+
+        if (!this.isUsed) {
+            button.addEventListener('click', () => {
+                const payload: NumberSelectedPayload = { id: this.id, value: this.tokenValue };
+                this.dispatchEvent(
+                    new CustomEvent<NumberSelectedPayload>('number-selected', {
+                        bubbles: true,
+                        detail: payload,
+                    })
+                );
+            });
+        }
+
+        this.replaceChildren(button);
+    }
+}
+
+customElements.define('number-token', NumberTokenElement);

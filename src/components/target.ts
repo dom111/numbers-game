@@ -9,3 +9,27 @@
  * - Target value is immutable for the duration of a round; it only changes when a new game starts.
  * - Renders a `Number` component in a non-interactive (disabled) state.
  */
+
+import './number.js';
+
+export class TargetNumberElement extends HTMLElement {
+    static readonly observedAttributes = ['value'] as const;
+
+    connectedCallback(): void {
+        this.render();
+    }
+
+    attributeChangedCallback(): void {
+        this.render();
+    }
+
+    private render(): void {
+        const value = this.getAttribute('value') ?? '';
+        const token = document.createElement('number-token');
+        token.setAttribute('value', value);
+        token.setAttribute('used', '');
+        this.replaceChildren(token);
+    }
+}
+
+customElements.define('target-number', TargetNumberElement);
