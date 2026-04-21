@@ -3,7 +3,9 @@
 ## High Priority
 
 ### Planned MVP Features
-- [ ] **Loading state** — Show spinner/indicator during solver validation when generating new games (solver can take 100ms+)
+- [ ] **Loading state** — Show spinner during 'New Game' validation (solver can take 100-500ms)
+  - [ ] Disable buttons while validating
+  - [ ] Consider moving validation to Web Worker for true non-blocking behavior
 - [ ] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
 - [x] **Solution validation** — Verify a valid solution exists before starting each round to prevent unwinnable games
 - [x] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress

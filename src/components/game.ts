@@ -134,6 +134,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private currentHint: string = '';
 
+    private isGenerating = false;
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
@@ -230,22 +232,30 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'new') {
-            this.baseNumbers = generateNumbers();
-            // Generate a solvable target with minimal attempts
-            let target = generateTarget();
-            for (let attempts = 0; attempts < 5; attempts += 1) {
-                if (validateSolvability(this.baseNumbers, target)) {
-                    break;
+            this.isGenerating = true;
+            this.render(); // Show loading state
+            
+            // Use setTimeout to allow UI to update before heavy computation
+            setTimeout(() => {
+                this.baseNumbers = generateNumbers();
+                // Generate a target that's actually solvable (with 20 attempts)
+                let target = generateTarget();
+                for (let attempts = 0; attempts < 20; attempts += 1) {
+                    if (validateSolvability(this.baseNumbers, target)) {
+                        break;
+                    }
+                    target = generateTarget();
                 }
-                target = generateTarget();
-            }
-            this.target = target;
-            this.resetRoundState();
-            const detail: GameNewPayload = { target: this.target, numbers: [...this.baseNumbers] };
-            this.dispatchEvent(
-                new CustomEvent<GameNewPayload>('game-new', { bubbles: true, detail })
-            );
-            this.render();
+                this.target = target;
+                this.resetRoundState();
+                this.isGenerating = false;
+                const detail: GameNewPayload = { target: this.target, numbers: [...this.baseNumbers] };
+                this.dispatchEvent(
+                    new CustomEvent<GameNewPayload>('game-new', { bubbles: true, detail })
+                );
+                this.render();
+            }, 10);
+            return;
         }
     };
 
@@ -320,6 +330,20 @@ export class NumbersGameElement extends HTMLElement {
     private render(): void {
         const wrapper = document.createElement('section');
         wrapper.className = 'game-board';
+
+        // Show loading state while generating new game
+        if (this.isGenerating) {
+            const heading = document.createElement('h2');
+            heading.textContent = 'Loading...';
+            
+            const loadingMessage = document.createElement('p');
+            loadingMessage.className = 'loading-message';
+            loadingMessage.textContent = 'Generating new game...';
+            
+            wrapper.append(heading, loadingMessage);
+            this.replaceChildren(wrapper);
+            return;
+        }
 
         const heading = document.createElement('h2');
         heading.textContent = 'Game';

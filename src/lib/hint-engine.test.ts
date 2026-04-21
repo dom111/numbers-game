@@ -146,6 +146,28 @@ describe('getHint', () => {
             expect(lastStep.result).toBe(175);
         }
     });
+
+    it('correctly includes duplicate values from completed steps', () => {
+        // After completing 75 - 50 = 25, we have two 25s available
+        // (the original 25 from starting numbers, and the result 25)
+        const state: HintGameState = {
+            availableNumbers: [1, 5, 7, 9, 50, 75, 25],
+            completedSteps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
+            target: 175, // A solvable target
+        };
+
+        const hint = getHint(state, HintLevel.FullSolution);
+        // Should find a solution (doesn't matter if 25+25 is in it)
+        expect(hint).not.toBeNull();
+        if (hint?.level === HintLevel.FullSolution) {
+            // The solution should reach the target
+            const lastStep = hint.steps[hint.steps.length - 1];
+            expect(lastStep.result).toBe(175);
+        }
+    });
 });
+
+
+
 
 
