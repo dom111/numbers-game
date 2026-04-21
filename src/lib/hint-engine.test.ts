@@ -92,14 +92,15 @@ describe('getHint', () => {
         }
     });
 
-    it('includes completed step results in available tokens for hint generation', () => {
+    it('uses derived results only when already present in availableNumbers', () => {
         const state: HintGameState = {
-            availableNumbers: [1, 5, 7, 9, 50, 75],
-            completedSteps: [{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }],
+            // 250 is treated as an already-available derived token value.
+            // Its source operands are intentionally omitted here.
+            availableNumbers: [1, 7, 9, 75, 250],
+            completedSteps: [],
             target: 175,
         };
 
-        // After step-1, the solver should find a path that uses the 250 result
         const hint = getHint(state, HintLevel.FullSolution);
         expect(hint).not.toBeNull();
 
