@@ -139,6 +139,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private isGenerating = false;
 
+    private generationTimeout: ReturnType<typeof setTimeout> | null = null;
+
     connectedCallback(): void {
         this.addEventListener('number-selected', this.onNumberSelected as EventListener);
         this.addEventListener('steps-changed', this.onStepsChanged as EventListener);
@@ -149,6 +151,7 @@ export class NumbersGameElement extends HTMLElement {
     }
 
     disconnectedCallback(): void {
+        this.clearGenerationTimeout();
         this.removeEventListener('number-selected', this.onNumberSelected as EventListener);
         this.removeEventListener('steps-changed', this.onStepsChanged as EventListener);
         this.removeEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
@@ -179,6 +182,31 @@ export class NumbersGameElement extends HTMLElement {
         this.currentHint = '';
     }
 
+    private clearGenerationTimeout(): void {
+        if (this.generationTimeout !== null) {
+            clearTimeout(this.generationTimeout);
+            this.generationTimeout = null;
+        }
+    }
+
+    private generateSolvableRound(): { numbers: number[]; target: number } {
+        for (let numberAttempts = 0; numberAttempts < 20; numberAttempts += 1) {
+            const numbers = generateNumbers();
+
+            for (let targetAttempts = 0; targetAttempts < 20; targetAttempts += 1) {
+                const target = generateTarget();
+                if (validateSolvability(numbers, target)) {
+                    return { numbers, target };
+                }
+            }
+        }
+
+        // Guaranteed-solvable fallback: target matches one of the available numbers.
+        const fallbackNumbers = generateNumbers();
+        const fallbackTarget = fallbackNumbers[Math.floor(Math.random() * fallbackNumbers.length)];
+        return { numbers: fallbackNumbers, target: fallbackTarget };
+    }
+
     private onActionClick = (event: MouseEvent): void => {
         const target = event.target as HTMLElement;
         const actionButton = target.closest<HTMLButtonElement>('button[data-action]');
@@ -195,61 +223,67 @@ export class NumbersGameElement extends HTMLElement {
         if (action === 'hint') {
             // Calculate hint on demand
             const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
-            if (availableNumbers.length >= 2) {
-                const gameState = {
-                    availableNumbers,
-                    completedSteps: this.steps,
-                    target: this.target,
-                };
-                const hint = getHint(gameState, this.hintLevel);
+            if (availableNumbers.length < 2) {
+                this.currentHint = 'No hint available.';
+                this.hintLevel = HintLevel.NextOperands;
+                this.render();
+                return;
+            }
 
-                // Format hint as text
-                if (hint) {
-                    switch (hint.level) {
-                        case HintLevel.NextOperands:
-                            this.currentHint = `Try using ${hint.leftValue} and ${hint.rightValue}`;
-                            break;
-                        case HintLevel.NextOperator:
-                            this.currentHint = `${hint.leftValue} ${hint.operator} ${hint.rightValue}`;
-                            break;
-                        case HintLevel.NextStep:
-                            this.currentHint = `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
-                            break;
-                        case HintLevel.FullSolution:
-                            this.currentHint = `Full solution: ${hint.steps
-                                .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)
-                                .join(', then ')}`;
-                            break;
-                    }
-                } else {
-                    this.currentHint = 'No hint available.';
+            const gameState = {
+                availableNumbers,
+                completedSteps: this.steps,
+                target: this.target,
+            };
+            const hint = getHint(gameState, this.hintLevel);
+
+            // Format hint as text
+            if (hint) {
+                switch (hint.level) {
+                    case HintLevel.NextOperands:
+                        this.currentHint = `Try using ${hint.leftValue} and ${hint.rightValue}`;
+                        break;
+                    case HintLevel.NextOperator:
+                        this.currentHint = `${hint.leftValue} ${hint.operator} ${hint.rightValue}`;
+                        break;
+                    case HintLevel.NextStep:
+                        this.currentHint = `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
+                        break;
+                    case HintLevel.FullSolution:
+                        this.currentHint = `Full solution: ${hint.steps
+                            .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)
+                            .join(', then ')}`;
+                        break;
                 }
 
-                // Cycle to next hint level for next press
+                // Cycle to next hint level for next press.
                 const levels = Object.values(HintLevel);
                 const currentIndex = levels.indexOf(this.hintLevel);
                 this.hintLevel = levels[(currentIndex + 1) % levels.length];
+            } else {
+                this.currentHint = 'No hint available.';
+                this.hintLevel = HintLevel.NextOperands;
             }
+
             this.render();
             return;
         }
 
         if (action === 'new') {
+            if (this.isGenerating) return;
+
             this.isGenerating = true;
             this.render(); // Show loading state
 
             // Use setTimeout to allow UI to update before heavy computation
-            setTimeout(() => {
-                this.baseNumbers = generateNumbers();
-                // Generate a target that's actually solvable (with 20 attempts)
-                let target = generateTarget();
-                for (let attempts = 0; attempts < 20; attempts += 1) {
-                    if (validateSolvability(this.baseNumbers, target)) {
-                        break;
-                    }
-                    target = generateTarget();
-                }
-                this.target = target;
+            this.clearGenerationTimeout();
+            this.generationTimeout = setTimeout(() => {
+                this.generationTimeout = null;
+                if (!this.isConnected) return;
+
+                const nextRound = this.generateSolvableRound();
+                this.baseNumbers = nextRound.numbers;
+                this.target = nextRound.target;
                 this.resetRoundState();
                 this.isGenerating = false;
                 const detail: GameNewPayload = {

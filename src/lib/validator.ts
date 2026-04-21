@@ -12,6 +12,7 @@ import { isSolvable } from './solver.js';
  * Keyed by a canonical representation of numbers and target.
  */
 const solvabilityCache = new Map<string, boolean>();
+const MAX_SOLVABILITY_CACHE_ENTRIES = 500;
 
 /**
  * Generates a cache key for a numbers/target pair.
@@ -48,6 +49,14 @@ export const validateSolvability = (
     }
 
     const result = isSolvable(numbers, target);
+
+    if (solvabilityCache.size >= MAX_SOLVABILITY_CACHE_ENTRIES) {
+        const oldestKey = solvabilityCache.keys().next().value as string | undefined;
+        if (oldestKey !== undefined) {
+            solvabilityCache.delete(oldestKey);
+        }
+    }
+
     solvabilityCache.set(key, result);
     return result;
 };

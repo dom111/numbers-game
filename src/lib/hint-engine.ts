@@ -90,7 +90,7 @@ export type Hint = OperandsHint | OperatorHint | StepHint | SolutionHint;
  * @returns A hint object, or null if no solution exists or hint cannot be generated
  */
 export const getHint = (gameState: HintGameState, level: HintLevel): Hint | null => {
-    // Solve from the current currently-available token values only.
+    // Solve from the currently available token values only.
     const solverResult = findSolution([...gameState.availableNumbers], gameState.target);
     if (!solverResult.found) {
         return null;

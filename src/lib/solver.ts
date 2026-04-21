@@ -92,6 +92,15 @@ const compareHeuristic = (
     return 0;
 };
 
+const scorePath = (steps: SolverStep[]): [number, number, number, number] => {
+    const maxIntermediate = Math.max(...steps.map((step) => step.value));
+    const divisionCount = steps.filter((step) => step.operator === '÷').length;
+    const multiplicationCount = steps.filter((step) => step.operator === '×').length;
+    const sumIntermediate = steps.reduce((sum, step) => sum + step.value, 0);
+
+    return [maxIntermediate, divisionCount, multiplicationCount, sumIntermediate];
+};
+
 const operatorWeight = (operator: Operator): number => {
     switch (operator) {
         case '-':
@@ -213,15 +222,34 @@ const createCandidateMoves = (
 const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep[] | null => {
     const visited = new Set<string>([getStateKey(tokens)]);
     const queue: SolverState[] = [{ tokens, steps: [] }];
+    let bestSolution: SolverStep[] | null = null;
+    let bestScore: [number, number, number, number] | null = null;
 
     for (let index = 0; index < queue.length; index += 1) {
         const state = queue[index];
+
+        // Once a shortest solution is found, only expand states that can still
+        // produce solutions of equal depth.
+        if (bestSolution && state.steps.length >= bestSolution.length) {
+            break;
+        }
+
         const moves = createCandidateMoves(state.tokens, target, state.steps.length + 1);
 
         for (const move of moves) {
             const nextSteps = [...state.steps, move.step];
+
+            if (bestSolution && nextSteps.length > bestSolution.length) {
+                continue;
+            }
+
             if (move.step.value === target) {
-                return nextSteps;
+                const score = scorePath(nextSteps);
+                if (!bestSolution || !bestScore || compareHeuristic(score, bestScore) < 0) {
+                    bestSolution = nextSteps;
+                    bestScore = score;
+                }
+                continue;
             }
 
             const key = getStateKey(move.tokens);
@@ -234,7 +262,7 @@ const findShortestSolution = (tokens: SolverToken[], target: number): SolverStep
         }
     }
 
-    return null;
+    return bestSolution;
 };
 
 /**

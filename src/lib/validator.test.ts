@@ -72,4 +72,13 @@ describe('validateSolvability', () => {
         expect(result1).toBe(result2);
         expect(finalCacheSize).toBe(initialCacheSize); // No new cache entry
     });
+
+    it('evicts old entries when cache reaches max size', () => {
+        for (let value = 1; value <= 550; value += 1) {
+            // Trivially solvable pairs keep this loop fast while creating unique keys.
+            validateSolvability([value, 1, 1, 1, 1, 1], value);
+        }
+
+        expect(getSolvabilityCacheSize()).toBeLessThanOrEqual(500);
+    });
 });

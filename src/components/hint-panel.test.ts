@@ -72,18 +72,16 @@ describe('HintPanelElement', () => {
         expect(text).toContain('No hint available');
     });
 
-    it('includes completed step results in hint generation', () => {
-        // Simple solvable state with partial solution
-        el.setAttribute('numbers', JSON.stringify([9, 50, 75]));
+    it('uses only provided available numbers (including derived results)', () => {
+        // The derived 250 result must already be in available numbers for hints to use it.
+        el.setAttribute('numbers', JSON.stringify([9, 25, 250]));
         el.setAttribute('target', '225');
-        el.setAttribute(
-            'steps',
-            JSON.stringify([{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }])
-        );
         el.setAttribute('hint-level', HintLevel.NextOperands);
 
         const text = el.querySelector('.hint-text')?.textContent;
         expect(text).toContain('Try using');
+        expect(text).toContain('250');
+        expect(text).toContain('25');
     });
 
     it('updates hint when numbers attribute changes', () => {
@@ -121,3 +119,4 @@ describe('HintPanelElement', () => {
         expect(text).toContain('Try using');
     });
 });
+
