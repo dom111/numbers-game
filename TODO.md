@@ -6,10 +6,10 @@
 - [ ] **Loading state** — Show spinner/indicator during solver validation when generating new games (solver can take 100ms+)
 - [ ] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
 - [x] **Solution validation** — Verify a valid solution exists before starting each round to prevent unwinnable games
-- [ ] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress
-  - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at 4 levels (operands → operator → step → full solution)
-  - [ ] Hint UI component — display hints in game UI
-  - [ ] Integrate with game component — wire up hint requests
+- [x] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress
+  - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at 4 levels
+  - [x] Hint UI component (src/components/hint-panel.ts) — displays hints in game UI
+  - [x] Integrated with game component — Hint button cycles through levels
 
 ### UX & Accessibility
 - [ ] **Mobile-responsive design** — Ensure game plays well on small screens and touch devices
