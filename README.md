@@ -38,7 +38,7 @@ Invalid means:
 
 - `number-selected` (from each `number-token`): `{ id: string, value: number }`
     - `value` is the whole positive integer represented by that token.
-- `operator-selected` (from active step operator buttons): `{ operator: '+' | '-' | '×' | '÷' }`
+- `operator-selected` (from global `operator-buttons`): `{ operator: '+' | '-' | '×' | '÷' }`
 - `step-complete` (from active step): `{ id, left, operator, right, value }`
     - `value` is the evaluated result of that step equation.
 - `steps-changed` (from steps list): `{ steps: StepData[] }`
@@ -80,3 +80,18 @@ npm run lint
 npm run build
 npm test
 ```
+
+## Deployment (GitHub Pages)
+
+This repo is configured to deploy to `https://dom111.github.io/numbers-game/` using GitHub Actions.
+
+### One-time repository setup
+
+1. In GitHub, open **Settings -> Pages**.
+2. Set **Source** to **GitHub Actions**.
+
+### Deploy flow
+
+- The workflow at `.github/workflows/deploy.yml` runs on pushes to `main`.
+- It builds the app with Vite and publishes `dist` to GitHub Pages.
+- `vite.config.ts` uses `base: '/numbers-game/'` so asset URLs resolve correctly on project pages.
