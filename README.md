@@ -58,6 +58,8 @@ Invalid means:
     - next full step
     - full solution
 - Completing any step resets hint progression back to the first level for the next request.
+- If no hint is available but completed steps exist, the UI suggests removing the latest step and highlights
+  that step's row/remove control as a rollback cue.
 - Hint solutions prefer the fewest steps first; among equally short solutions they prefer simpler arithmetic and
   smaller intermediate values so the maths is easier to follow.
 - Example chain: with `[1, 5, 7, 9, 50, 75]`, `5 × 50 = 250`, then `250 - 75 = 175`.

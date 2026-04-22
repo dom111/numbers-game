@@ -47,7 +47,8 @@ Use these instructions for all code changes in this repository.
     - `NextStep`
     - `FullSolution`
 - Completing a step resets hint level to `NextOperands` and clears stale hint text.
-- If fewer than two tokens are available, show `No hint available.`.
+- If no hint is available and completed steps exist, suggest removing the latest step and highlight it.
+- If no hint is available and there are no completed steps to remove, show `No hint available.`.
 - Main game UI uses on-demand hint text rendering; do not reintroduce expensive per-render solving.
 - `HintGameState.availableNumbers` is the source of truth for available values.
 - Do not reconstruct available values by re-adding `completedSteps` results in `getHint`.

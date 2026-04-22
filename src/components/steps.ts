@@ -87,11 +87,13 @@ const createActiveStep = (count: number): ActiveStep => ({
 });
 
 export class StepsListElement extends HTMLElement {
-    static readonly observedAttributes = ['steps', 'locked'] as const;
+    static readonly observedAttributes = ['steps', 'locked', 'rollback-step-id'] as const;
 
     private steps: StepData[] = [];
 
     private activeStep: ActiveStep = createActiveStep(1);
+
+    private rollbackStepId: string | null = null;
 
     private get isLocked(): boolean {
         return this.hasAttribute('locked');
@@ -127,6 +129,7 @@ export class StepsListElement extends HTMLElement {
     private hydrateFromAttributes(): void {
         this.steps = parseSteps(this.getAttribute('steps'));
         this.activeStep = createActiveStep(this.steps.length + 1);
+        this.rollbackStepId = this.getAttribute('rollback-step-id');
     }
 
     private onNumberSelected = (event: CustomEvent<NumberSelectedPayload>): void => {
@@ -242,6 +245,9 @@ export class StepsListElement extends HTMLElement {
         for (const step of this.steps) {
             const row = document.createElement('div');
             row.className = 'step-row';
+            if (this.rollbackStepId === step.id) {
+                row.classList.add('rollback-suggested');
+            }
 
             const completed = document.createElement('step-equation');
             completed.setAttribute('locked', '');
@@ -258,6 +264,9 @@ export class StepsListElement extends HTMLElement {
             removeButton.title = 'Remove step';
             removeButton.textContent = '×';
             removeButton.disabled = this.isLocked;
+            if (this.rollbackStepId === step.id) {
+                removeButton.classList.add('rollback-suggested');
+            }
 
             row.append(completed, removeButton);
             wrapper.append(row);

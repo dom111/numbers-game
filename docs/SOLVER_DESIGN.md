@@ -158,6 +158,8 @@ Use a canonical representation of available token values (sorted ascending) to c
 - Hint generation is triggered only when the player clicks `Hint`.
 - Hint progression cycles through operands → operator → step → full solution.
 - Completing a step resets hint progression back to the first level.
+- When no hint is available and completed steps exist, the UI now suggests rolling back by removing the latest
+  step and visually highlights that step row/remove control.
 - New-round validation still runs on the main thread; a Web Worker is the next logical performance upgrade.
 - Difficulty bands are enforced from shortest-path length:
     - `easy` accepts `< 4` steps

@@ -325,7 +325,7 @@ describe('NumbersGameElement', () => {
         expect(['75 - 50 = 25', '5 × 50 = 250']).toContain(hintText);
     });
 
-    it('clears stale hint text when fewer than two numbers remain', () => {
+    it('suggests removing the latest step when no hint is available', () => {
         el.setAttribute('target', '175');
         el.setAttribute('numbers', '1,5,7,9,50,75');
 
@@ -348,7 +348,52 @@ describe('NumbersGameElement', () => {
         );
 
         (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        expect(el.querySelector('.hint-display')?.textContent).toBe('No hint available.');
+        expect(el.querySelector('.hint-display')?.textContent).toBe(
+            'No hint available. Try removing the latest step.'
+        );
+        expect(
+            (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
+        ).toBe('step-5');
+    });
+
+    it('clears rollback highlight when hints become available again', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [
+                        { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
+                        { id: 'step-2', left: 25, operator: '-', right: 9, value: 16 },
+                        { id: 'step-3', left: 16, operator: '+', right: 7, value: 23 },
+                        { id: 'step-4', left: 23, operator: '+', right: 5, value: 28 },
+                        { id: 'step-5', left: 28, operator: '-', right: 1, value: 27 },
+                    ],
+                },
+            })
+        );
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+        expect(
+            (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
+        ).toBe('step-5');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
+                },
+            })
+        );
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+        expect(el.querySelector('.hint-display')?.textContent).toContain('Try using');
+        expect(
+            (el.querySelector('steps-list') as HTMLElement).hasAttribute('rollback-step-id')
+        ).toBe(false);
     });
 
     it('cancels pending new-game generation when element disconnects', () => {
