@@ -69,4 +69,19 @@ describe('NumbersPoolElement', () => {
         expect(handler).toHaveBeenCalledOnce();
         expect(handler.mock.calls[0][0].detail).toEqual({ id: 'n1', value: 8 });
     });
+
+    it('locks all child tokens when pool is locked', () => {
+        el.setAttribute(
+            'tokens',
+            JSON.stringify([
+                { id: 'n1', value: 8, used: false },
+                { id: 'n2', value: 9, used: false },
+            ])
+        );
+        el.setAttribute('locked', '');
+
+        const buttons = Array.from(el.querySelectorAll('button')) as HTMLButtonElement[];
+        expect(buttons).toHaveLength(2);
+        expect(buttons.every((button) => button.disabled)).toBe(true);
+    });
 });

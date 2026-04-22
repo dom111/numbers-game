@@ -44,7 +44,11 @@ const parseTokens = (raw: string | null): NumberToken[] => {
 };
 
 export class NumbersPoolElement extends HTMLElement {
-    static readonly observedAttributes = ['tokens'] as const;
+    static readonly observedAttributes = ['tokens', 'locked'] as const;
+
+    private get isLocked(): boolean {
+        return this.hasAttribute('locked');
+    }
 
     connectedCallback(): void {
         this.render();
@@ -72,6 +76,9 @@ export class NumbersPoolElement extends HTMLElement {
             element.setAttribute('value', String(token.value));
             if (token.used) {
                 element.setAttribute('used', '');
+            }
+            if (this.isLocked) {
+                element.setAttribute('locked', '');
             }
             wrapper.append(element);
         }

@@ -68,6 +68,7 @@ Use these instructions for all code changes in this repository.
 ## Round generation and performance
 
 - `New game` must keep UI responsive (loading state is required).
+- Disable gameplay controls while generation/validation is running.
 - Generate difficulty-banded rounds using shortest-solution length from the solver:
     - `easy`: accept rounds with shortest solution `< 4` steps
     - `normal`: accept rounds with shortest solution `> 3` steps

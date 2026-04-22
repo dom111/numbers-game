@@ -419,6 +419,12 @@ target-number .number-token {
     font-weight: 500;
 }
 
+.loading-message {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.95rem;
+}
+
 .game-top-status {
     margin: 0 0 1rem 0;
     padding: 0.75rem 1rem;

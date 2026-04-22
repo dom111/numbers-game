@@ -5,7 +5,7 @@
 ### Planned MVP Features
 
 - [x] **Loading state** — Show loading UI during `New game` validation
-    - [ ] Disable gameplay buttons while validating
+    - [x] Disable gameplay buttons while validating
     - [ ] Move validation to a Web Worker for true non-blocking behavior
 - [ ] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
     - [ ] **In progress** — Design and implement responsive layout, color scheme, typography

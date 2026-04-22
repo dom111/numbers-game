@@ -489,6 +489,10 @@ export class NumbersGameElement extends HTMLElement {
         if (!actionButton || !this.contains(actionButton)) return;
 
         const action = actionButton.dataset.action;
+        if (this.isGenerating && action !== 'new') {
+            return;
+        }
+
         if (action === 'reset') {
             this.resetRoundState();
             this.dispatchEvent(new CustomEvent('game-reset', { bubbles: true, detail: {} }));
@@ -588,6 +592,8 @@ export class NumbersGameElement extends HTMLElement {
     }
 
     private onControlChange = (event: Event): void => {
+        if (this.isGenerating) return;
+
         const target = event.target;
         if (!(target instanceof HTMLSelectElement)) return;
         if (target.dataset.action !== 'difficulty') return;
@@ -597,7 +603,7 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private onNumberSelected = (event: CustomEvent<NumberSelectedPayload>): void => {
-        if (this.locked) return;
+        if (this.locked || this.isGenerating) return;
 
         const pool = this.querySelector('numbers-pool');
         if (!pool || !pool.contains(event.target as Node)) return;
@@ -621,7 +627,7 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private onOperatorSelected = (event: CustomEvent<OperatorSelectedPayload>): void => {
-        if (this.locked) return;
+        if (this.locked || this.isGenerating) return;
 
         const operators = this.querySelector('operator-buttons');
         if (!operators || !operators.contains(event.target as Node)) return;
@@ -638,7 +644,7 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private onStepsChanged = (event: CustomEvent<StepsChangedPayload>): void => {
-        if (this.locked) return;
+        if (this.locked || this.isGenerating) return;
 
         const stepsList = this.querySelector('steps-list');
         if (event.target !== stepsList) return;
@@ -681,6 +687,8 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private onStepTokenRemove = (event: CustomEvent<StepTokenRemovePayload>): void => {
+        if (this.isGenerating) return;
+
         const stepsList = this.querySelector('steps-list');
         if (!stepsList || !stepsList.contains(event.target as Node)) return;
 
@@ -696,20 +704,7 @@ export class NumbersGameElement extends HTMLElement {
 
         const wrapper = document.createElement('section');
         wrapper.className = 'game-board';
-
-        // Show loading state while generating new game
-        if (this.isGenerating) {
-            const heading = document.createElement('h2');
-            heading.textContent = 'Loading...';
-
-            const loadingMessage = document.createElement('p');
-            loadingMessage.className = 'loading-message';
-            loadingMessage.textContent = 'Generating new game...';
-
-            wrapper.append(heading, loadingMessage);
-            this.replaceChildren(wrapper);
-            return;
-        }
+        const interactionLocked = this.locked || this.isGenerating;
 
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
@@ -742,16 +737,22 @@ export class NumbersGameElement extends HTMLElement {
             ? this.tokens.map((token) => ({ ...token, used: true }))
             : this.tokens;
         pool.setAttribute('tokens', JSON.stringify(visibleTokens));
+        if (interactionLocked) {
+            pool.setAttribute('locked', '');
+        }
 
         // Create operators section
         const operatorsSection = document.createElement('operator-buttons');
+        if (interactionLocked) {
+            operatorsSection.setAttribute('locked', '');
+        }
 
         const steps = document.createElement('steps-list');
         steps.setAttribute('steps', JSON.stringify(this.steps));
         if (this.rollbackHintStepId) {
             steps.setAttribute('rollback-step-id', this.rollbackHintStepId);
         }
-        if (this.locked) {
+        if (interactionLocked) {
             steps.setAttribute('locked', '');
         }
 
@@ -762,21 +763,32 @@ export class NumbersGameElement extends HTMLElement {
         resetButton.type = 'button';
         resetButton.dataset.action = 'reset';
         resetButton.textContent = 'Reset board';
+        resetButton.disabled = interactionLocked;
 
         const hintButton = document.createElement('button');
         hintButton.type = 'button';
         hintButton.dataset.action = 'hint';
         hintButton.textContent = 'Hint';
-        hintButton.disabled = this.locked;
+        hintButton.disabled = interactionLocked;
 
         const newGameButton = document.createElement('button');
         newGameButton.type = 'button';
         newGameButton.dataset.action = 'new';
         newGameButton.textContent = 'New game';
+        newGameButton.disabled = this.isGenerating;
+
+        difficultySelect.disabled = this.isGenerating;
 
         controls.append(resetButton, hintButton, newGameButton, difficultyControls);
 
         wrapper.append(target, pool, operatorsSection, steps, controls);
+
+        if (this.isGenerating) {
+            const loadingMessage = document.createElement('p');
+            loadingMessage.className = 'loading-message';
+            loadingMessage.textContent = 'Generating new game...';
+            wrapper.insertBefore(loadingMessage, controls);
+        }
 
         // Display current hint if available
         if (this.currentHint) {
