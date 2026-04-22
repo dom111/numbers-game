@@ -356,6 +356,29 @@ describe('NumbersGameElement', () => {
         ).toBe('step-5');
     });
 
+    it('suggests removing latest step when solver has no hint and >= 2 tokens remain', () => {
+        el.setAttribute('target', '17');
+        el.setAttribute('numbers', '1,1,1,1,1,1');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 1, operator: '+', right: 1, value: 2 }],
+                },
+            })
+        );
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+        expect(el.querySelector('.hint-display')?.textContent).toBe(
+            'No hint available. Try removing the latest step.'
+        );
+        expect(
+            (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
+        ).toBe('step-1');
+    });
+
     it('clears rollback highlight when hints become available again', () => {
         el.setAttribute('target', '175');
         el.setAttribute('numbers', '1,5,7,9,50,75');
