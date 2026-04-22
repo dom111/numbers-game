@@ -244,6 +244,13 @@ h2 {
     gap: 0.5rem;
 }
 
+.step-row.rollback-suggested {
+    border-radius: 0.625rem;
+    background: #fef2f2;
+    box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2);
+    animation: rollbackHintPulse 1.2s ease-in-out infinite;
+}
+
 .step-remove-button {
     display: inline-flex;
     align-items: center;
@@ -277,6 +284,11 @@ h2 {
 .step-remove-button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+}
+
+.step-remove-button.rollback-suggested {
+    border-color: var(--error);
+    background-color: #fee2e2;
 }
 
 /* ── Game ─────────────────────────────────────────────────── */
@@ -427,6 +439,16 @@ target-number .number-token {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes rollbackHintPulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.18);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.26);
     }
 }
 

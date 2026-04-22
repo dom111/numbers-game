@@ -43,6 +43,8 @@
  * - The supported operators are addition (+), subtraction (−), multiplication (×), and division (÷).
  * - Hint calculation is on-demand from the `Hint` button; the button cycles through increasing detail
  *   and resets after any completed step.
+ * - If hinting cannot progress from the current state and completed steps exist, the UI suggests removing
+ *   the latest step and highlights it as rollback guidance.
  * - `New game` shows a temporary loading state while solvability validation runs.
  */
 
@@ -163,6 +165,8 @@ export class NumbersGameElement extends HTMLElement {
     private hintLevel: HintLevel = HintLevel.NextOperands;
 
     private currentHint: string = '';
+
+    private rollbackHintStepId: string | null = null;
 
     private isGenerating = false;
 
@@ -299,6 +303,7 @@ export class NumbersGameElement extends HTMLElement {
         this.nextTokenId = this.tokens.length + 1;
         this.hintLevel = HintLevel.NextOperands;
         this.currentHint = '';
+        this.rollbackHintStepId = null;
     }
 
     private clearGenerationTimeout(): void {
@@ -495,7 +500,14 @@ export class NumbersGameElement extends HTMLElement {
             // Calculate hint on demand
             const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
             if (availableNumbers.length < 2) {
-                this.currentHint = 'No hint available.';
+                if (this.steps.length > 0) {
+                    const latestStep = this.steps[this.steps.length - 1];
+                    this.rollbackHintStepId = latestStep.id;
+                    this.currentHint = 'No hint available. Try removing the latest step.';
+                } else {
+                    this.rollbackHintStepId = null;
+                    this.currentHint = 'No hint available.';
+                }
                 this.hintLevel = HintLevel.NextOperands;
                 this.render();
                 return;
@@ -510,6 +522,7 @@ export class NumbersGameElement extends HTMLElement {
 
             // Format hint as text
             if (hint) {
+                this.rollbackHintStepId = null;
                 switch (hint.level) {
                     case HintLevel.NextOperands:
                         this.currentHint = `Try using ${hint.leftValue} and ${hint.rightValue}`;
@@ -532,7 +545,14 @@ export class NumbersGameElement extends HTMLElement {
                 const currentIndex = levels.indexOf(this.hintLevel);
                 this.hintLevel = levels[(currentIndex + 1) % levels.length];
             } else {
-                this.currentHint = 'No hint available.';
+                if (this.steps.length > 0) {
+                    const latestStep = this.steps[this.steps.length - 1];
+                    this.rollbackHintStepId = latestStep.id;
+                    this.currentHint = 'No hint available. Try removing the latest step.';
+                } else {
+                    this.rollbackHintStepId = null;
+                    this.currentHint = 'No hint available.';
+                }
                 this.hintLevel = HintLevel.NextOperands;
             }
 
@@ -631,6 +651,7 @@ export class NumbersGameElement extends HTMLElement {
         this.selectedTokenIds = [];
         this.hintLevel = HintLevel.NextOperands; // Reset hint level on step completion
         this.currentHint = ''; // Clear any previous hint
+        this.rollbackHintStepId = null;
 
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
@@ -730,6 +751,9 @@ export class NumbersGameElement extends HTMLElement {
 
         const steps = document.createElement('steps-list');
         steps.setAttribute('steps', JSON.stringify(this.steps));
+        if (this.rollbackHintStepId) {
+            steps.setAttribute('rollback-step-id', this.rollbackHintStepId);
+        }
         if (this.locked) {
             steps.setAttribute('locked', '');
         }

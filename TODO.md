@@ -15,6 +15,7 @@
     - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at 4 levels
     - [x] On-demand hint display in the game UI — `Hint` button cycles through levels
     - [x] Shortest-path solver preference — hints favor fewer steps and simpler arithmetic
+    - [x] No-hint rollback guidance — suggest removing latest step and highlight it for recovery
 
 ### UX & Accessibility
 
