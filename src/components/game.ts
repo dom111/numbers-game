@@ -500,15 +500,7 @@ export class NumbersGameElement extends HTMLElement {
             // Calculate hint on demand
             const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
             if (availableNumbers.length < 2) {
-                if (this.steps.length > 0) {
-                    const latestStep = this.steps[this.steps.length - 1];
-                    this.rollbackHintStepId = latestStep.id;
-                    this.currentHint = 'No hint available. Try removing the latest step.';
-                } else {
-                    this.rollbackHintStepId = null;
-                    this.currentHint = 'No hint available.';
-                }
-                this.hintLevel = HintLevel.NextOperands;
+                this.setNoHintAvailableState();
                 this.render();
                 return;
             }
@@ -545,15 +537,7 @@ export class NumbersGameElement extends HTMLElement {
                 const currentIndex = levels.indexOf(this.hintLevel);
                 this.hintLevel = levels[(currentIndex + 1) % levels.length];
             } else {
-                if (this.steps.length > 0) {
-                    const latestStep = this.steps[this.steps.length - 1];
-                    this.rollbackHintStepId = latestStep.id;
-                    this.currentHint = 'No hint available. Try removing the latest step.';
-                } else {
-                    this.rollbackHintStepId = null;
-                    this.currentHint = 'No hint available.';
-                }
-                this.hintLevel = HintLevel.NextOperands;
+                this.setNoHintAvailableState();
             }
 
             this.render();
@@ -589,6 +573,19 @@ export class NumbersGameElement extends HTMLElement {
             return;
         }
     };
+
+    private setNoHintAvailableState(): void {
+        if (this.steps.length > 0) {
+            const latestStep = this.steps[this.steps.length - 1];
+            this.rollbackHintStepId = latestStep.id;
+            this.currentHint = 'No hint available. Try removing the latest step.';
+        } else {
+            this.rollbackHintStepId = null;
+            this.currentHint = 'No hint available.';
+        }
+
+        this.hintLevel = HintLevel.NextOperands;
+    }
 
     private onControlChange = (event: Event): void => {
         const target = event.target;

@@ -452,6 +452,12 @@ target-number .number-token {
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .step-row.rollback-suggested {
+        animation: none;
+    }
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 
 @media (max-width: 640px) {

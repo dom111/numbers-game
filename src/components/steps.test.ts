@@ -242,6 +242,35 @@ describe('StepsListElement', () => {
         expect(handler).not.toHaveBeenCalled();
     });
 
+    it('highlights only the rollback-suggested completed step', () => {
+        el.setAttribute(
+            'steps',
+            JSON.stringify([
+                { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
+                { id: 'step-2', left: 9, operator: '×', right: 25, value: 225 },
+            ])
+        );
+        el.setAttribute('rollback-step-id', 'step-2');
+
+        const highlightedRow = el.querySelector('.step-row.rollback-suggested') as HTMLElement;
+        expect(highlightedRow.querySelector('step-equation')?.getAttribute('id')).toBe('step-2');
+
+        const highlightedRemoveButton = el.querySelector(
+            'button[data-remove-step-id="step-2"]'
+        ) as HTMLButtonElement;
+        expect(highlightedRemoveButton.classList.contains('rollback-suggested')).toBe(true);
+
+        const nonHighlightedRow = el.querySelector(
+            '.step-row:not(.rollback-suggested) step-equation[id="step-1"]'
+        ) as HTMLElement;
+        expect(nonHighlightedRow).not.toBeNull();
+
+        const nonHighlightedRemoveButton = el.querySelector(
+            'button[data-remove-step-id="step-1"]'
+        ) as HTMLButtonElement;
+        expect(nonHighlightedRemoveButton.classList.contains('rollback-suggested')).toBe(false);
+    });
+
     it('does not render an active step when locked', () => {
         el.setAttribute(
             'steps',
