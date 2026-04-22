@@ -62,6 +62,23 @@ describe('NumberTokenElement', () => {
         });
     });
 
+    describe('locked state', () => {
+        beforeEach(() => {
+            el.setAttribute('locked', '');
+        });
+
+        it('button is disabled while locked', () => {
+            expect(el.querySelector('button')?.disabled).toBe(true);
+        });
+
+        it('does not fire when token is locked', () => {
+            const fn = vi.fn();
+            el.addEventListener('number-selected', fn);
+            el.querySelector('button')?.click();
+            expect(fn).not.toHaveBeenCalled();
+        });
+    });
+
     describe('number-selected event', () => {
         it('fires when available token is clicked', () => {
             const fn = vi.fn();

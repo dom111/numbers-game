@@ -100,4 +100,12 @@ describe('OperatorButtonsElement', () => {
         const divideButton = el.querySelector('button[data-operator="÷"]') as HTMLButtonElement;
         expect(divideButton.disabled).toBe(true);
     });
+
+    it('disables all operators when locked', () => {
+        el.setAttribute('locked', '');
+
+        const buttons = Array.from(el.querySelectorAll('button')) as HTMLButtonElement[];
+        expect(buttons).toHaveLength(4);
+        expect(buttons.every((button) => button.disabled)).toBe(true);
+    });
 });

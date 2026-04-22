@@ -22,7 +22,7 @@
 import type { NumberSelectedPayload } from '../types.js';
 
 export class NumberTokenElement extends HTMLElement {
-    static readonly observedAttributes = ['value', 'used'] as const;
+    static readonly observedAttributes = ['value', 'used', 'locked'] as const;
 
     connectedCallback(): void {
         this.render();
@@ -40,14 +40,18 @@ export class NumberTokenElement extends HTMLElement {
         return this.hasAttribute('used');
     }
 
+    private get isLocked(): boolean {
+        return this.hasAttribute('locked');
+    }
+
     private render(): void {
         const button = document.createElement('button');
         button.className = 'number-token';
         button.textContent = String(this.tokenValue);
-        button.disabled = this.isUsed;
+        button.disabled = this.isUsed || this.isLocked;
         button.setAttribute('aria-pressed', String(this.isUsed));
 
-        if (!this.isUsed) {
+        if (!this.isUsed && !this.isLocked) {
             button.addEventListener('click', () => {
                 const payload: NumberSelectedPayload = { id: this.id, value: this.tokenValue };
                 this.dispatchEvent(

@@ -29,7 +29,11 @@ const parsePositiveInt = (value: string | null): number | null => {
 };
 
 export class OperatorButtonsElement extends HTMLElement {
-    static readonly observedAttributes = ['left', 'right'] as const;
+    static readonly observedAttributes = ['left', 'right', 'locked'] as const;
+
+    private get isLocked(): boolean {
+        return this.hasAttribute('locked');
+    }
 
     connectedCallback(): void {
         this.render();
@@ -74,7 +78,7 @@ export class OperatorButtonsElement extends HTMLElement {
             button.type = 'button';
             button.textContent = operator;
             button.dataset.operator = operator;
-            button.disabled = this.isDisabled(operator);
+            button.disabled = this.isLocked || this.isDisabled(operator);
 
             if (!button.disabled) {
                 button.addEventListener('click', () => {

@@ -67,6 +67,7 @@ Invalid means:
 ## Round generation
 
 - `New game` shows a loading state while a fresh round is generated.
+- Gameplay controls are disabled while generation/validation is running.
 - The app retries target generation to prefer solvable rounds.
 - Difficulty can be chosen as `Normal` or `Easy` from the game UI.
 - Difficulty bands are based on shortest-solution length from the solver:

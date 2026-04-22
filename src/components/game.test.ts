@@ -436,6 +436,56 @@ describe('NumbersGameElement', () => {
         }
     });
 
+    it('disables gameplay controls while generating a new game', () => {
+        vi.useFakeTimers();
+
+        try {
+            el.setAttribute('target', '175');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
+
+            const newButton = el.querySelector('button[data-action="new"]') as HTMLButtonElement;
+            newButton.click();
+
+            expect(el.querySelector('.loading-message')?.textContent).toBe(
+                'Generating new game...'
+            );
+
+            expect(
+                (el.querySelector('button[data-action="reset"]') as HTMLButtonElement).disabled
+            ).toBe(true);
+            expect(
+                (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).disabled
+            ).toBe(true);
+            expect(
+                (el.querySelector('button[data-action="new"]') as HTMLButtonElement).disabled
+            ).toBe(true);
+            expect(
+                (el.querySelector('.difficulty-controls select') as HTMLSelectElement).disabled
+            ).toBe(true);
+
+            expect(el.querySelector('steps-list step-equation[data-role="active"]')).toBeNull();
+
+            (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
+            (
+                el.querySelector('operator-buttons button[data-operator="+"]') as HTMLButtonElement
+            ).click();
+
+            expect(el.querySelector('steps-list step-equation[data-role="active"]')).toBeNull();
+
+            vi.runAllTimers();
+
+            expect(el.querySelector('.loading-message')).toBeNull();
+            expect(
+                (el.querySelector('button[data-action="reset"]') as HTMLButtonElement).disabled
+            ).toBe(false);
+            expect(
+                (el.querySelector('button[data-action="new"]') as HTMLButtonElement).disabled
+            ).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('preselects easy difficulty from hash', () => {
         el.remove();
         setHash('#difficulty=easy');
