@@ -76,9 +76,8 @@ export class NumbersPoolElement extends HTMLElement {
         if (!(target instanceof HTMLButtonElement)) return;
 
         const isHorizontalKey = event.key === 'ArrowRight' || event.key === 'ArrowLeft';
-        const isVerticalKey = event.key === 'ArrowUp' || event.key === 'ArrowDown';
         const isHomeEnd = event.key === 'Home' || event.key === 'End';
-        if (!isHorizontalKey && !isVerticalKey && !isHomeEnd) return;
+        if (!isHorizontalKey && !isHomeEnd) return;
 
         const enabledButtons = Array.from(
             this.querySelectorAll<HTMLButtonElement>('.number-token')
@@ -99,7 +98,7 @@ export class NumbersPoolElement extends HTMLElement {
             return;
         }
 
-        const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
         const nextIndex = (currentIndex + delta + enabledButtons.length) % enabledButtons.length;
         enabledButtons[nextIndex].focus();
     };

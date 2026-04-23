@@ -84,11 +84,7 @@ export class OperatorButtonsElement extends HTMLElement {
         const target = event.target;
         if (!(target instanceof HTMLButtonElement)) return;
 
-        const isArrowKey =
-            event.key === 'ArrowRight' ||
-            event.key === 'ArrowLeft' ||
-            event.key === 'ArrowDown' ||
-            event.key === 'ArrowUp';
+        const isArrowKey = event.key === 'ArrowRight' || event.key === 'ArrowLeft';
         const isHomeEnd = event.key === 'Home' || event.key === 'End';
         if (!isArrowKey && !isHomeEnd) return;
 
@@ -110,7 +106,7 @@ export class OperatorButtonsElement extends HTMLElement {
             return;
         }
 
-        const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
         const nextIndex = (currentIndex + delta + enabledButtons.length) % enabledButtons.length;
         enabledButtons[nextIndex].focus();
     };

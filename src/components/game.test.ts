@@ -566,6 +566,21 @@ describe('NumbersGameElement', () => {
         expect(document.activeElement).toBe(plusOperator);
     });
 
+    it('does not intercept arrow key behavior on difficulty select', () => {
+        const difficultySelect = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        const resetButton = el.querySelector('button[data-action="reset"]') as HTMLButtonElement;
+
+        resetButton.focus();
+        difficultySelect.focus();
+        difficultySelect.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+        );
+
+        expect(document.activeElement).toBe(difficultySelect);
+    });
+
     it('renders hint messages in a polite live region', () => {
         el.setAttribute('target', '175');
         el.setAttribute('numbers', '1,5,7,9,50,75');

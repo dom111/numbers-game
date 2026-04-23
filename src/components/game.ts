@@ -722,6 +722,13 @@ export class NumbersGameElement extends HTMLElement {
 
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
+        if (
+            target instanceof HTMLSelectElement ||
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement
+        ) {
+            return;
+        }
 
         const { numbers, operators, controls } = this.getFocusableGroupButtons();
         const sourceGroups = [numbers, operators, controls].filter((group) => group.length > 0);

@@ -210,7 +210,6 @@ export class StepEquationElement extends HTMLElement {
 
         const value = document.createElement('span');
         value.className = 'step-value';
-        value.setAttribute('aria-live', 'polite');
         if (hasError) {
             value.classList.add('error');
         }
