@@ -24,6 +24,7 @@
 - [x] **Improve ARIA labels** — Better screen-reader support for all interactive elements
 - [ ] **Visual feedback** — Add animations/transitions on button clicks, selections, step completion
     - [x] Selected-number highlighting in the available numbers pool
+    - [x] Easy-mode difficulty badge shown beside the target (hidden for normal mode)
 
 ## Medium Priority
 
@@ -78,6 +79,7 @@
 - [ ] **Sound effects** — Subtle audio feedback (optional, minimal)
 - [ ] **Multiplayer mode** — Future consideration for competitive play
 - [ ] Celebration animations on win (confetti, etc.) — keep light and non-distracting for younger players
+    - [ ] Start with a reduced-motion-safe sparkle/burst near the win banner
 
 ## Notes
 

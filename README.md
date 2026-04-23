@@ -92,6 +92,7 @@ Invalid means:
 - Hint/loading messages are announced as polite live regions.
 - Mobile/touch sizing keeps interactive controls at touch-friendly heights.
 - `New game` is styled as the primary call-to-action while keeping reset/hint as secondary controls.
+- Easy mode shows a small visual badge beside the target; normal mode intentionally omits it.
 
 ## Difficulty + URL hash
 

@@ -105,6 +105,7 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 - UI
     - Difficulty selector (`Normal`/`Easy`) in the main controls row next to `New game`
     - Selector updates hash for shareable preselected mode links and starts a new round
+    - Easy mode displays a small badge near the target to make mode state obvious during play
 
 ## Testing Plan
 
