@@ -444,13 +444,21 @@ target-number .number-token {
 
 target-number[celebrating] .number-token {
     animation:
-        targetCelebrateGrow 1.15s ease-out,
-        targetCelebrateGradient 1.3s ease-in-out;
+        targetCelebrateGrow 1.2s ease-in-out infinite,
+        targetCelebrateGradient 2.1s linear infinite;
     transform-origin: center;
-    background: linear-gradient(120deg, #1d4ed8, #06b6d4, #22c55e, #f59e0b, #ef4444, #1d4ed8);
+    background: linear-gradient(
+        120deg,
+        #1d4ed8,
+        #06b6d4,
+        #22c55e,
+        #f59e0b,
+        #ef4444,
+        #1d4ed8
+    ) !important;
     background-size: 300% 300%;
-    -webkit-background-clip: text;
-    background-clip: text;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
     color: transparent !important;
 }
 
@@ -585,17 +593,21 @@ target-number[celebrating] .number-token {
 
 @keyframes targetCelebrateGrow {
     0% {
+        font-size: 2.5rem;
         transform: scale(1);
         filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0));
     }
-    25% {
-        transform: scale(1.22);
-        filter: drop-shadow(0 0 0.5rem rgba(59, 130, 246, 0.45));
+    32% {
+        font-size: 3.45rem;
+        transform: scale(1.4);
+        filter: drop-shadow(0 0 0.75rem rgba(59, 130, 246, 0.55));
     }
-    55% {
-        transform: scale(1.08);
+    62% {
+        font-size: 3.05rem;
+        transform: scale(1.16);
     }
     100% {
+        font-size: 2.5rem;
         transform: scale(1);
         filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0));
     }
@@ -630,9 +642,9 @@ target-number[celebrating] .number-token {
     }
 
     target-number[celebrating] .number-token {
-        background: none;
-        -webkit-background-clip: border-box;
-        background-clip: border-box;
+        background: none !important;
+        -webkit-background-clip: border-box !important;
+        background-clip: border-box !important;
         color: var(--primary-dark) !important;
     }
 }
