@@ -14,7 +14,7 @@
 import './number.js';
 
 export class TargetNumberElement extends HTMLElement {
-    static readonly observedAttributes = ['value', 'celebrating'] as const;
+    static readonly observedAttributes = ['value'] as const;
 
     connectedCallback(): void {
         this.render();

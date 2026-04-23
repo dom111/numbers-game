@@ -41,8 +41,7 @@ const likelyUnused = uniqueClassSelectors.filter((cls) => {
     return !(
         corpus.includes(`"${cls}"`) ||
         corpus.includes(`'${cls}'`) ||
-        corpus.includes(`.${cls}`) ||
-        corpus.includes(cls)
+        corpus.includes(`.${cls}`)
     );
 });
 
