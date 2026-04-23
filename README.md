@@ -63,8 +63,9 @@ Invalid means:
 - Hint solutions prefer the fewest steps first; among equally short solutions they prefer simpler arithmetic and
   smaller intermediate values so the maths is easier to follow.
 - Example chain: with `[1, 5, 7, 9, 50, 75]`, `5 × 50 = 250`, then `250 - 75 = 175`.
-- Keyboard support includes Tab/Shift+Tab for control traversal, Enter/Space to activate controls, and arrow-key
-  navigation within number-token and operator groups.
+- Keyboard support includes Tab/Shift+Tab for control traversal, Enter/Space to activate controls, arrow-key
+  navigation within number-token and operator groups, and Up/Down movement between numbers, operators, and
+  game controls.
 
 ## Round generation
 
