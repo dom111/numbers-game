@@ -116,6 +116,7 @@ npm run dev
 npm run lint
 npm run build
 npm test
+npm run css:unused
 ```
 
 ## Deployment (GitHub Pages)
