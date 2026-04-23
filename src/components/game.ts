@@ -830,13 +830,16 @@ export class NumbersGameElement extends HTMLElement {
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
 
-        const difficultyBadge = document.createElement('div');
-        difficultyBadge.className = 'difficulty-badge';
-        difficultyBadge.textContent =
-            this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
-        difficultyBadge.setAttribute('aria-label', `Difficulty: ${this.difficulty}`);
+        targetSection.append(target);
 
-        targetSection.append(target, difficultyBadge);
+        // Only show difficulty badge for Easy mode
+        if (this.difficulty === 'easy') {
+            const difficultyBadge = document.createElement('div');
+            difficultyBadge.className = 'difficulty-badge';
+            difficultyBadge.textContent = 'Easy';
+            difficultyBadge.setAttribute('aria-label', 'Difficulty: Easy');
+            targetSection.append(difficultyBadge);
+        }
 
         const difficultyControls = document.createElement('div');
         difficultyControls.className = 'difficulty-controls';
