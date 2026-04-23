@@ -394,24 +394,11 @@ h2 {
     outline-offset: 1px;
 }
 
-.target-section {
-    display: grid;
-    gap: 0.5rem;
-}
-
 .target-section-with-badge {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-}
-
-.target-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--gray-700);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .difficulty-badge {
@@ -432,34 +419,25 @@ target-number {
     justify-content: center;
 }
 
-target-number .number-token {
+target-number .number-token:disabled {
     width: 4.5rem;
     font-size: 2.5rem;
-    background: none !important;
+    background-color: transparent;
     box-shadow: none;
-    color: var(--primary-dark) !important;
-    border: none !important;
-    opacity: 1 !important;
+    color: var(--primary-dark);
+    opacity: 1;
 }
 
-target-number[celebrating] .number-token {
+target-number[celebrating] .number-token:disabled {
     animation:
         targetCelebrateGrow 1.2s ease-in-out infinite,
         targetCelebrateGradient 2.1s linear infinite;
     transform-origin: center;
-    background: linear-gradient(
-        120deg,
-        #1d4ed8,
-        #06b6d4,
-        #22c55e,
-        #f59e0b,
-        #ef4444,
-        #1d4ed8
-    ) !important;
+    background: linear-gradient(135deg, #1d4ed8, #06b6d4, #22c55e, #f59e0b, #ef4444, #1d4ed8);
     background-size: 300% 300%;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-    color: transparent !important;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .game-controls {
@@ -593,35 +571,28 @@ target-number[celebrating] .number-token {
 
 @keyframes targetCelebrateGrow {
     0% {
-        font-size: 2.5rem;
         transform: scale(1);
-        filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0));
     }
-    32% {
-        font-size: 3.45rem;
-        transform: scale(1.4);
-        filter: drop-shadow(0 0 0.75rem rgba(59, 130, 246, 0.55));
+    33% {
+        transform: scale(1.7);
     }
-    62% {
-        font-size: 3.05rem;
-        transform: scale(1.16);
-    }
-    100% {
-        font-size: 2.5rem;
-        transform: scale(1);
-        filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0));
+    80% {
+        transform: scale(0.9);
     }
 }
 
 @keyframes targetCelebrateGradient {
     0% {
-        background-position: 0% 50%;
+        background-position: 0 0;
+    }
+    25% {
+        background-position: 0 100%;
     }
     50% {
-        background-position: 100% 50%;
+        background-position: 100% 100%;
     }
-    100% {
-        background-position: 0% 50%;
+    75% {
+        background-position: 100% 0;
     }
 }
 
@@ -637,15 +608,15 @@ target-number[celebrating] .number-token {
     .game-board.is-won::before,
     .game-board.is-won::after,
     .game-top-status,
-    target-number[celebrating] .number-token {
+    target-number[celebrating] .number-token:disabled {
         animation: none;
     }
 
-    target-number[celebrating] .number-token {
-        background: none !important;
-        -webkit-background-clip: border-box !important;
-        background-clip: border-box !important;
-        color: var(--primary-dark) !important;
+    target-number[celebrating] .number-token:disabled {
+        background: none;
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        color: var(--primary-dark);
     }
 }
 
