@@ -137,7 +137,7 @@ This repo is configured to deploy to `https://dom111.github.io/numbers-game/` us
 ### PR checks
 
 - The workflow at `.github/workflows/ci.yml` runs on pull requests to `main`.
-- It runs format check, lint, build, and tests so PRs can be gated by required checks.
+- It runs format check, a non-blocking CSS unused-selector scan, lint, build, and tests so PRs can be gated by required checks.
 
 ## Planned: URL game-state sharing
 
