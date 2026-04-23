@@ -25,7 +25,7 @@
 - [ ] **Visual feedback** — Add animations/transitions on button clicks, selections, step completion
     - [x] Selected-number highlighting in the available numbers pool
     - [x] Easy-mode difficulty badge shown beside the target (hidden for normal mode)
-    - [x] Celebration animation on win (lightweight burst effect)
+    - [x] Celebration animation on win (burst + target grow/gradient effect)
 
 ## Medium Priority
 
