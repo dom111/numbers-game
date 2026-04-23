@@ -52,6 +52,24 @@ describe('NumberTokenElement', () => {
         });
     });
 
+    describe('selected state', () => {
+        beforeEach(() => {
+            el.setAttribute('selected', '');
+        });
+
+        it('applies selected class while remaining interactive', () => {
+            const button = el.querySelector('button') as HTMLButtonElement;
+            expect(button.disabled).toBe(false);
+            expect(button.classList.contains('is-selected')).toBe(true);
+        });
+
+        it('updates accessible label to selected', () => {
+            expect(el.querySelector('button')?.getAttribute('aria-label')).toBe(
+                'Number 5, selected'
+            );
+        });
+    });
+
     describe('used state', () => {
         beforeEach(() => {
             el.setAttribute('used', '');

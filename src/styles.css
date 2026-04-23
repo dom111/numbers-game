@@ -95,6 +95,15 @@ h2 {
     outline-offset: 2px;
 }
 
+.number-token.is-selected:not(:disabled) {
+    border: 2px solid #fbbf24;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow:
+        0 0 0 3px rgba(251, 191, 36, 0.28),
+        var(--shadow-md);
+    transform: translateY(-1px) scale(1.03);
+}
+
 /* Used / disabled token */
 .number-token:disabled {
     background-color: var(--gray-200);
@@ -351,12 +360,32 @@ h2 {
     gap: 0.5rem;
 }
 
+.target-section-with-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
 .target-label {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--gray-700);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.difficulty-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-sm);
 }
 
 target-number {
@@ -491,6 +520,10 @@ target-number .number-token {
 @media (prefers-reduced-motion: reduce) {
     .step-row.rollback-suggested {
         animation: none;
+    }
+
+    .number-token.is-selected:not(:disabled) {
+        transform: none;
     }
 }
 

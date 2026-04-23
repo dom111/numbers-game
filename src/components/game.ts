@@ -46,6 +46,7 @@
  * - If hinting cannot progress from the current state and completed steps exist, the UI suggests removing
  *   the latest step and highlights it as rollback guidance.
  * - `New game` shows a temporary loading state while solvability validation runs.
+ * - Changing the difficulty from the in-game selector immediately starts a new round in that mode.
  */
 
 import './numbers.js';
@@ -315,6 +316,55 @@ export class NumbersGameElement extends HTMLElement {
         }
     }
 
+    private startNewGameGeneration(): void {
+        if (this.isGenerating) return;
+
+        this.isGenerating = true;
+        this.render();
+
+        // Allow loading UI to paint before round generation runs.
+        this.clearGenerationTimeout();
+        this.generationTimeout = setTimeout(() => {
+            this.generationTimeout = null;
+            if (!this.isConnected) return;
+
+            const nextRound = this.generateSolvableRound(this.difficulty);
+            this.baseNumbers = nextRound.numbers;
+            this.target = nextRound.target;
+            this.resetRoundState();
+            this.isGenerating = false;
+            const detail: GameNewPayload = {
+                target: this.target,
+                numbers: [...this.baseNumbers],
+            };
+            this.dispatchEvent(
+                new CustomEvent<GameNewPayload>('game-new', { bubbles: true, detail })
+            );
+            this.render();
+        }, 10);
+    }
+
+    private syncSelectedTokenIdsFromActiveStep(): void {
+        const activeStep = this.querySelector('steps-list step-equation[data-role="active"]');
+        if (!activeStep) {
+            this.selectedTokenIds = [];
+            return;
+        }
+
+        const nextSelected: string[] = [];
+        const leftId = activeStep.getAttribute('left-token-id');
+        const rightId = activeStep.getAttribute('right-token-id');
+        if (leftId) nextSelected.push(leftId);
+        if (rightId) nextSelected.push(rightId);
+        this.selectedTokenIds = nextSelected;
+    }
+
+    private syncSelectedTokensToPool(): void {
+        const pool = this.querySelector('numbers-pool');
+        if (!pool) return;
+        pool.setAttribute('selected-token-ids', JSON.stringify(this.selectedTokenIds));
+    }
+
     private ensureTopWinBanner(): HTMLParagraphElement | null {
         if (!document.body) return null;
 
@@ -551,31 +601,7 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'new') {
-            if (this.isGenerating) return;
-
-            this.isGenerating = true;
-            this.render(); // Show loading state
-
-            // Use setTimeout to allow UI to update before heavy computation
-            this.clearGenerationTimeout();
-            this.generationTimeout = setTimeout(() => {
-                this.generationTimeout = null;
-                if (!this.isConnected) return;
-
-                const nextRound = this.generateSolvableRound(this.difficulty);
-                this.baseNumbers = nextRound.numbers;
-                this.target = nextRound.target;
-                this.resetRoundState();
-                this.isGenerating = false;
-                const detail: GameNewPayload = {
-                    target: this.target,
-                    numbers: [...this.baseNumbers],
-                };
-                this.dispatchEvent(
-                    new CustomEvent<GameNewPayload>('game-new', { bubbles: true, detail })
-                );
-                this.render();
-            }, 10);
+            this.startNewGameGeneration();
             return;
         }
     };
@@ -601,7 +627,9 @@ export class NumbersGameElement extends HTMLElement {
         if (target.dataset.action !== 'difficulty') return;
         const nextDifficulty = target.value;
         if (nextDifficulty !== 'easy' && nextDifficulty !== 'normal') return;
+        if (nextDifficulty === this.difficulty) return;
         this.setDifficulty(nextDifficulty);
+        this.startNewGameGeneration();
     };
 
     private onNumberSelected = (event: CustomEvent<NumberSelectedPayload>): void => {
@@ -609,13 +637,6 @@ export class NumbersGameElement extends HTMLElement {
 
         const pool = this.querySelector('numbers-pool');
         if (!pool || !pool.contains(event.target as Node)) return;
-
-        const existingIndex = this.selectedTokenIds.indexOf(event.detail.id);
-        if (existingIndex >= 0) {
-            this.selectedTokenIds.splice(existingIndex, 1);
-        } else if (this.selectedTokenIds.length < 2) {
-            this.selectedTokenIds.push(event.detail.id);
-        }
 
         const stepsList = this.querySelector('steps-list');
         if (!stepsList) return;
@@ -626,6 +647,10 @@ export class NumbersGameElement extends HTMLElement {
                 detail: event.detail,
             })
         );
+
+        // Derive selection from the active step so UI stays in sync with step-side token clearing rules.
+        this.syncSelectedTokenIdsFromActiveStep();
+        this.syncSelectedTokensToPool();
     };
 
     private onOperatorSelected = (event: CustomEvent<OperatorSelectedPayload>): void => {
@@ -694,7 +719,8 @@ export class NumbersGameElement extends HTMLElement {
         const stepsList = this.querySelector('steps-list');
         if (!stepsList || !stepsList.contains(event.target as Node)) return;
 
-        this.selectedTokenIds = this.selectedTokenIds.filter((id) => id !== event.detail.tokenId);
+        this.syncSelectedTokenIdsFromActiveStep();
+        this.syncSelectedTokensToPool();
     };
 
     private getFocusableGroupButtons(): {
@@ -718,24 +744,58 @@ export class NumbersGameElement extends HTMLElement {
     }
 
     private onDirectionalGroupNavigation = (event: KeyboardEvent): void => {
-        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const isVerticalKey = event.key === 'ArrowDown' || event.key === 'ArrowUp';
+        const isHorizontalKey = event.key === 'ArrowRight' || event.key === 'ArrowLeft';
+        const isHomeEnd = event.key === 'Home' || event.key === 'End';
+        if (!isVerticalKey && !isHorizontalKey && !isHomeEnd) return;
 
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
+
+        const sourceElement =
+            target.closest('button, select, input, textarea') ??
+            (target instanceof HTMLElement ? target : null);
+        if (!(sourceElement instanceof HTMLElement)) return;
+
+        const { numbers, operators, controls } = this.getFocusableGroupButtons();
+
+        if (isHorizontalKey || isHomeEnd) {
+            // Preserve native selector behavior; only drive control-row arrows from buttons.
+            if (sourceElement instanceof HTMLSelectElement) return;
+
+            const controlIndex = controls.findIndex((element) => element === sourceElement);
+            if (controlIndex < 0 || controls.length < 2) return;
+
+            event.preventDefault();
+            if (event.key === 'Home') {
+                controls[0].focus();
+                return;
+            }
+            if (event.key === 'End') {
+                controls[controls.length - 1].focus();
+                return;
+            }
+
+            const delta = event.key === 'ArrowRight' ? 1 : -1;
+            const nextIndex = (controlIndex + delta + controls.length) % controls.length;
+            controls[nextIndex].focus();
+            return;
+        }
+
+        // Keep ArrowUp/ArrowDown native behavior on form controls like the difficulty select.
         if (
-            target instanceof HTMLSelectElement ||
-            target instanceof HTMLInputElement ||
-            target instanceof HTMLTextAreaElement
+            sourceElement instanceof HTMLSelectElement ||
+            sourceElement instanceof HTMLInputElement ||
+            sourceElement instanceof HTMLTextAreaElement
         ) {
             return;
         }
 
-        const { numbers, operators, controls } = this.getFocusableGroupButtons();
         const sourceGroups = [numbers, operators, controls].filter((group) => group.length > 0);
         if (sourceGroups.length < 2) return;
 
         const sourceGroupIndex = sourceGroups.findIndex((group) =>
-            group.some((element) => element === target)
+            group.some((element) => element === sourceElement)
         );
         if (sourceGroupIndex < 0) return;
 
@@ -744,7 +804,7 @@ export class NumbersGameElement extends HTMLElement {
         if (!destinationGroup || destinationGroup.length === 0) return;
 
         const sourceGroup = sourceGroups[sourceGroupIndex];
-        const sourceIndex = sourceGroup.findIndex((element) => element === target);
+        const sourceIndex = sourceGroup.findIndex((element) => element === sourceElement);
         const nextIndex = Math.min(sourceIndex, destinationGroup.length - 1);
 
         event.preventDefault();
@@ -764,8 +824,19 @@ export class NumbersGameElement extends HTMLElement {
         wrapper.setAttribute('aria-label', 'Numbers game board');
         const interactionLocked = this.locked || this.isGenerating;
 
+        const targetSection = document.createElement('div');
+        targetSection.className = 'target-section-with-badge';
+
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
+
+        const difficultyBadge = document.createElement('div');
+        difficultyBadge.className = 'difficulty-badge';
+        difficultyBadge.textContent =
+            this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
+        difficultyBadge.setAttribute('aria-label', `Difficulty: ${this.difficulty}`);
+
+        targetSection.append(target, difficultyBadge);
 
         const difficultyControls = document.createElement('div');
         difficultyControls.className = 'difficulty-controls';
@@ -796,6 +867,7 @@ export class NumbersGameElement extends HTMLElement {
             ? this.tokens.map((token) => ({ ...token, used: true }))
             : this.tokens;
         pool.setAttribute('tokens', JSON.stringify(visibleTokens));
+        pool.setAttribute('selected-token-ids', JSON.stringify(this.selectedTokenIds));
         if (interactionLocked) {
             pool.setAttribute('locked', '');
         }
@@ -845,7 +917,7 @@ export class NumbersGameElement extends HTMLElement {
 
         controls.append(resetButton, hintButton, newGameButton, difficultyControls);
 
-        wrapper.append(target, pool, operatorsSection, steps, controls);
+        wrapper.append(targetSection, pool, operatorsSection, steps, controls);
 
         if (this.isGenerating) {
             const loadingMessage = document.createElement('p');

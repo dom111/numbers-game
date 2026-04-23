@@ -23,6 +23,7 @@
 - [x] **Keyboard navigation** — Add arrow keys, Enter, Tab support for accessibility
 - [x] **Improve ARIA labels** — Better screen-reader support for all interactive elements
 - [ ] **Visual feedback** — Add animations/transitions on button clicks, selections, step completion
+    - [x] Selected-number highlighting in the available numbers pool
 
 ## Medium Priority
 
@@ -39,6 +40,7 @@
     - [ ] Extend hash state to include numbers + target for round links
     - [ ] Extend hash state to include steps/hint state for full in-progress sharing
 - [ ] Using the date as a seed for daily challenges
+- [ ] Time tracking (optionally, so as not to pressure younger players)
 
 ### Game Logic Enhancements
 
@@ -71,9 +73,11 @@
 ### Nice-to-Have
 
 - [ ] **Keyboard shortcuts** — `R` for reset, `N` for new game, etc.
+    - [ ] Ensure confirmation to avoid accidental resets
 - [ ] **Dark mode** — Optional theme toggle
 - [ ] **Sound effects** — Subtle audio feedback (optional, minimal)
 - [ ] **Multiplayer mode** — Future consideration for competitive play
+- [ ] Celebration animations on win (confetti, etc.) — keep light and non-distracting for younger players
 
 ## Notes
 
