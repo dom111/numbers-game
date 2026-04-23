@@ -52,6 +52,20 @@ describe('NumbersPoolElement', () => {
         expect(el.querySelectorAll('number-token')).toHaveLength(2);
     });
 
+    it('marks selected tokens using selected-token-ids', () => {
+        el.setAttribute(
+            'tokens',
+            JSON.stringify([
+                { id: 'n1', value: 1, used: false },
+                { id: 'n2', value: 2, used: false },
+            ])
+        );
+        el.setAttribute('selected-token-ids', JSON.stringify(['n2']));
+
+        expect(el.querySelector('#n1')?.hasAttribute('selected')).toBe(false);
+        expect(el.querySelector('#n2')?.hasAttribute('selected')).toBe(true);
+    });
+
     it('returns empty render for malformed tokens JSON', () => {
         el.setAttribute('tokens', '{bad json');
         expect(el.querySelectorAll('number-token')).toHaveLength(0);

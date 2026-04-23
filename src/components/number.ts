@@ -22,7 +22,13 @@
 import type { NumberSelectedPayload } from '../types.js';
 
 export class NumberTokenElement extends HTMLElement {
-    static readonly observedAttributes = ['value', 'used', 'locked', 'aria-label'] as const;
+    static readonly observedAttributes = [
+        'value',
+        'used',
+        'selected',
+        'locked',
+        'aria-label',
+    ] as const;
 
     connectedCallback(): void {
         this.render();
@@ -40,6 +46,10 @@ export class NumberTokenElement extends HTMLElement {
         return this.hasAttribute('used');
     }
 
+    private get isSelected(): boolean {
+        return this.hasAttribute('selected');
+    }
+
     private get isLocked(): boolean {
         return this.hasAttribute('locked');
     }
@@ -47,6 +57,9 @@ export class NumberTokenElement extends HTMLElement {
     private render(): void {
         const button = document.createElement('button');
         button.className = 'number-token';
+        if (this.isSelected && !this.isUsed && !this.isLocked) {
+            button.classList.add('is-selected');
+        }
         button.textContent = String(this.tokenValue);
         button.disabled = this.isUsed || this.isLocked;
         button.setAttribute('aria-pressed', String(this.isUsed));
@@ -54,7 +67,12 @@ export class NumberTokenElement extends HTMLElement {
         if (customAriaLabel) {
             button.setAttribute('aria-label', customAriaLabel);
         } else {
-            const statusLabel = this.isUsed || this.isLocked ? 'unavailable' : 'available';
+            const statusLabel =
+                this.isUsed || this.isLocked
+                    ? 'unavailable'
+                    : this.isSelected
+                      ? 'selected'
+                      : 'available';
             button.setAttribute('aria-label', `Number ${this.tokenValue}, ${statusLabel}`);
         }
 

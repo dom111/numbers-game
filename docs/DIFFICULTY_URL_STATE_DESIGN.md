@@ -98,12 +98,13 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
     - Re-resolves on `hashchange` using `source === 'attribute'` check — only defers to attribute when it resolves to a valid difficulty
     - Passes difficulty into new-game generation
     - Syncs selector changes back into hash using `history.replaceState`, skipping hash writes when `source === 'attribute'`
+    - Selector-driven difficulty changes immediately trigger new-round generation in the selected mode
     - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
     - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`
 - UI
     - Difficulty selector (`Normal`/`Easy`) in the main controls row next to `New game`
-    - Selector updates hash for shareable preselected mode links
+    - Selector updates hash for shareable preselected mode links and starts a new round
 
 ## Testing Plan
 

@@ -43,8 +43,20 @@ const parseTokens = (raw: string | null): NumberToken[] => {
     }
 };
 
+const parseSelectedTokenIds = (raw: string | null): string[] => {
+    if (!raw) return [];
+
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((value): value is string => typeof value === 'string');
+    } catch {
+        return [];
+    }
+};
+
 export class NumbersPoolElement extends HTMLElement {
-    static readonly observedAttributes = ['tokens', 'locked'] as const;
+    static readonly observedAttributes = ['tokens', 'selected-token-ids', 'locked'] as const;
 
     private get isLocked(): boolean {
         return this.hasAttribute('locked');
@@ -69,6 +81,10 @@ export class NumbersPoolElement extends HTMLElement {
 
     set tokens(value: NumberToken[]) {
         this.setAttribute('tokens', JSON.stringify(value));
+    }
+
+    get selectedTokenIds(): string[] {
+        return parseSelectedTokenIds(this.getAttribute('selected-token-ids'));
     }
 
     private onKeyDown = (event: KeyboardEvent): void => {
@@ -108,6 +124,7 @@ export class NumbersPoolElement extends HTMLElement {
         wrapper.className = 'numbers-pool';
         wrapper.setAttribute('role', 'group');
         wrapper.setAttribute('aria-label', 'Available numbers');
+        const selectedIds = new Set(this.selectedTokenIds);
 
         for (const token of this.tokens) {
             const element = document.createElement('number-token');
@@ -118,6 +135,9 @@ export class NumbersPoolElement extends HTMLElement {
             }
             if (this.isLocked) {
                 element.setAttribute('locked', '');
+            }
+            if (!token.used && selectedIds.has(token.id)) {
+                element.setAttribute('selected', '');
             }
             wrapper.append(element);
         }

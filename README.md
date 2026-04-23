@@ -66,6 +66,8 @@ Invalid means:
 - Keyboard support includes Tab/Shift+Tab for control traversal, Enter/Space to activate controls, arrow-key
   navigation within number-token and operator groups, and Up/Down movement between numbers, operators, and
   game controls.
+- Within the bottom game-controls row, Left/Right/Home/End move focus across `Reset`, `Hint`, `New game`, and
+  the difficulty selector.
 - Up/Down group navigation intentionally does not override native ArrowUp/ArrowDown behavior on the difficulty
   select control.
 
@@ -75,6 +77,7 @@ Invalid means:
 - Gameplay controls are disabled while generation/validation is running.
 - The app retries target generation to prefer solvable rounds.
 - Difficulty can be chosen as `Normal` or `Easy` from the game UI.
+- Changing difficulty from the selector updates mode and immediately generates a fresh round in that mode.
 - Difficulty bands are based on shortest-solution length from the solver:
     - `Easy`: shortest path must be `< 4` steps
     - `Normal`: shortest path must be `> 3` steps
@@ -97,6 +100,7 @@ Invalid means:
     - `#difficulty=normal`
 - Resolution precedence is: `difficulty` attribute on `<numbers-game>` > URL hash > default (`normal`).
 - Changing the selector updates the hash with `history.replaceState` so links can be shared without page reload.
+- Selector changes also start a new generated round for the newly selected mode.
 
 ## Development
 

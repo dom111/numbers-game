@@ -186,6 +186,23 @@ describe('NumbersGameElement', () => {
         expect(activeStepAfterRight.getAttribute('right')).toBe('75');
     });
 
+    it('syncs selected number token highlights with active-step operand assignments', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
+        (el.querySelector('numbers-pool #n5 button') as HTMLButtonElement).click();
+
+        let selected = el.querySelectorAll('numbers-pool number-token[selected]');
+        expect(selected).toHaveLength(2);
+
+        // Clicking left again clears left and right from the active step.
+        (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
+
+        selected = el.querySelectorAll('numbers-pool number-token[selected]');
+        expect(selected).toHaveLength(0);
+    });
+
     it('rebuilds token pool when steps are removed', () => {
         el.setAttribute('target', '999');
         el.setAttribute('numbers', '1,5,7,9,50,75');
@@ -525,6 +542,37 @@ describe('NumbersGameElement', () => {
         expect(window.location.hash).toBe('#difficulty=easy');
     });
 
+    it('starts a new round when difficulty selector changes', () => {
+        vi.useFakeTimers();
+
+        try {
+            const gameNewHandler = vi.fn();
+            el.addEventListener('game-new', gameNewHandler);
+
+            const select = el.querySelector(
+                '.difficulty-controls select[data-action="difficulty"]'
+            ) as HTMLSelectElement;
+
+            select.value = 'easy';
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+
+            expect(el.querySelector('.loading-message')?.textContent).toBe(
+                'Generating new game...'
+            );
+            expect(
+                (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).disabled
+            ).toBe(true);
+
+            vi.runAllTimers();
+
+            expect(gameNewHandler).toHaveBeenCalledOnce();
+            expect(window.location.hash).toBe('#difficulty=easy');
+            expect(el.querySelector('.loading-message')).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('renders difficulty controls inside the main game controls row', () => {
         const controls = el.querySelector('.game-controls') as HTMLElement;
         const difficultyControls = el.querySelector('.difficulty-controls') as HTMLElement;
@@ -564,6 +612,36 @@ describe('NumbersGameElement', () => {
 
         resetButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
         expect(document.activeElement).toBe(plusOperator);
+    });
+
+    it('moves focus across bottom controls with arrow left/right and Home/End', () => {
+        const resetButton = el.querySelector('button[data-action="reset"]') as HTMLButtonElement;
+        const hintButton = el.querySelector('button[data-action="hint"]') as HTMLButtonElement;
+        const newButton = el.querySelector('button[data-action="new"]') as HTMLButtonElement;
+        const difficultySelect = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+
+        resetButton.focus();
+        resetButton.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+        );
+        expect(document.activeElement).toBe(hintButton);
+
+        hintButton.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+        );
+        expect(document.activeElement).toBe(newButton);
+
+        newButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        expect(document.activeElement).toBe(difficultySelect);
+
+        newButton.focus();
+        newButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+        expect(document.activeElement).toBe(resetButton);
+
+        resetButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+        expect(document.activeElement).toBe(difficultySelect);
     });
 
     it('does not intercept arrow key behavior on difficulty select', () => {
