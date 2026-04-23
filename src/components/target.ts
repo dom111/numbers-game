@@ -28,6 +28,7 @@ export class TargetNumberElement extends HTMLElement {
         const token = document.createElement('number-token');
         token.setAttribute('value', value);
         token.setAttribute('used', '');
+        token.setAttribute('aria-label', `Target ${value}`);
         this.replaceChildren(token);
     }
 }

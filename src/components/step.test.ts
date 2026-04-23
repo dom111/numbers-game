@@ -41,6 +41,10 @@ describe('StepEquationElement', () => {
         expect(el.querySelector('.step-value')?.textContent).toBe('= ?');
     });
 
+    it('renders step wrapper as a grouped region', () => {
+        expect(el.querySelector('.step')?.getAttribute('role')).toBe('group');
+    });
+
     it('emits step-complete for a valid complete step', () => {
         const handler = vi.fn();
         el.addEventListener('step-complete', handler);
@@ -175,5 +179,13 @@ describe('StepEquationElement', () => {
 
         expect(handler).toHaveBeenCalledOnce();
         expect(handler.mock.calls[0][0].detail).toEqual({ slot: 'left', tokenId: 'n1' });
+    });
+
+    it('labels removable operand chips for screen readers', () => {
+        el.setAttribute('left', '50');
+        el.setAttribute('left-token-id', 'n1');
+
+        const chip = el.querySelector('button.step-chip[data-slot="left"]') as HTMLButtonElement;
+        expect(chip.getAttribute('aria-label')).toBe('Remove left operand 50');
     });
 });

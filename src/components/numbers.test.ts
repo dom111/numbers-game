@@ -84,4 +84,28 @@ describe('NumbersPoolElement', () => {
         expect(buttons).toHaveLength(2);
         expect(buttons.every((button) => button.disabled)).toBe(true);
     });
+
+    it('renders a grouped region label for assistive technology', () => {
+        const pool = el.querySelector('.numbers-pool') as HTMLElement;
+        expect(pool.getAttribute('role')).toBe('group');
+        expect(pool.getAttribute('aria-label')).toBe('Available numbers');
+    });
+
+    it('moves focus with arrow keys across enabled number tokens', () => {
+        el.setAttribute(
+            'tokens',
+            JSON.stringify([
+                { id: 'n1', value: 8, used: false },
+                { id: 'n2', value: 9, used: false },
+            ])
+        );
+
+        const first = el.querySelector('#n1 button') as HTMLButtonElement;
+        const second = el.querySelector('#n2 button') as HTMLButtonElement;
+
+        first.focus();
+        first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(document.activeElement).toBe(second);
+    });
 });

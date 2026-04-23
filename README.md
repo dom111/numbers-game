@@ -63,6 +63,8 @@ Invalid means:
 - Hint solutions prefer the fewest steps first; among equally short solutions they prefer simpler arithmetic and
   smaller intermediate values so the maths is easier to follow.
 - Example chain: with `[1, 5, 7, 9, 50, 75]`, `5 × 50 = 250`, then `250 - 75 = 175`.
+- Keyboard support includes Tab/Shift+Tab for control traversal, Enter/Space to activate controls, and arrow-key
+  navigation within number-token and operator groups.
 
 ## Round generation
 
@@ -77,6 +79,13 @@ Invalid means:
   and logs a console diagnostic with attempt counts and elapsed time.
 - If no solvable candidate is found within retries, the game falls back to a guaranteed-solvable target.
 - Validation currently runs on the main thread; moving it to a worker remains a future performance improvement.
+
+## Accessibility and UI polish
+
+- Interactive regions include explicit ARIA labels (numbers, operators, controls, steps, target, and hint/status).
+- Hint/loading messages are announced as polite live regions.
+- Mobile/touch sizing keeps interactive controls at touch-friendly heights.
+- `New game` is styled as the primary call-to-action while keeping reset/hint as secondary controls.
 
 ## Difficulty + URL hash
 

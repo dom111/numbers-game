@@ -44,6 +44,12 @@ describe('NumberTokenElement', () => {
         it('aria-pressed is false', () => {
             expect(el.querySelector('button')?.getAttribute('aria-pressed')).toBe('false');
         });
+
+        it('includes an accessible label with value and availability', () => {
+            expect(el.querySelector('button')?.getAttribute('aria-label')).toBe(
+                'Number 5, available'
+            );
+        });
     });
 
     describe('used state', () => {
@@ -56,10 +62,21 @@ describe('NumberTokenElement', () => {
         it('aria-pressed is true', () => {
             expect(el.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
         });
+        it('updates accessible label to unavailable', () => {
+            expect(el.querySelector('button')?.getAttribute('aria-label')).toBe(
+                'Number 5, unavailable'
+            );
+        });
         it('reverts to enabled when used attribute is removed', () => {
             el.removeAttribute('used');
             expect(el.querySelector('button')?.disabled).toBe(false);
         });
+    });
+
+    it('uses custom aria-label when provided', () => {
+        el.setAttribute('aria-label', 'Target 175');
+        el.setAttribute('value', '175');
+        expect(el.querySelector('button')?.getAttribute('aria-label')).toBe('Target 175');
     });
 
     describe('locked state', () => {

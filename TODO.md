@@ -7,8 +7,8 @@
 - [x] **Loading state** — Show loading UI during `New game` validation
     - [x] Disable gameplay buttons while validating
     - [ ] Move validation to a Web Worker for true non-blocking behavior
-- [ ] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
-    - [ ] **In progress** — Design and implement responsive layout, color scheme, typography
+- [x] **Styling** — Polish UI layout, colors, spacing, fonts, and overall visual design
+    - [x] **Done** — Responsive layout, color scheme, and typography pass applied
 - [x] **Deployment** — Publish app to GitHub Pages at `https://dom111.github.io/numbers-game/`
 - [x] **Solution validation** — Verify a valid solution exists before starting each round to prevent unwinnable games
 - [x] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress
@@ -19,9 +19,9 @@
 
 ### UX & Accessibility
 
-- [ ] **Mobile-responsive design** — Ensure game plays well on small screens and touch devices
-- [ ] **Keyboard navigation** — Add arrow keys, Enter, Tab support for accessibility
-- [ ] **Improve ARIA labels** — Better screen-reader support for all interactive elements
+- [x] **Mobile-responsive design** — Ensure game plays well on small screens and touch devices
+- [x] **Keyboard navigation** — Add arrow keys, Enter, Tab support for accessibility
+- [x] **Improve ARIA labels** — Better screen-reader support for all interactive elements
 - [ ] **Visual feedback** — Add animations/transitions on button clicks, selections, step completion
 
 ## Medium Priority

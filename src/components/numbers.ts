@@ -51,7 +51,12 @@ export class NumbersPoolElement extends HTMLElement {
     }
 
     connectedCallback(): void {
+        this.addEventListener('keydown', this.onKeyDown as EventListener);
         this.render();
+    }
+
+    disconnectedCallback(): void {
+        this.removeEventListener('keydown', this.onKeyDown as EventListener);
     }
 
     attributeChangedCallback(): void {
@@ -66,9 +71,44 @@ export class NumbersPoolElement extends HTMLElement {
         this.setAttribute('tokens', JSON.stringify(value));
     }
 
+    private onKeyDown = (event: KeyboardEvent): void => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const isHorizontalKey = event.key === 'ArrowRight' || event.key === 'ArrowLeft';
+        const isVerticalKey = event.key === 'ArrowUp' || event.key === 'ArrowDown';
+        const isHomeEnd = event.key === 'Home' || event.key === 'End';
+        if (!isHorizontalKey && !isVerticalKey && !isHomeEnd) return;
+
+        const enabledButtons = Array.from(
+            this.querySelectorAll<HTMLButtonElement>('.number-token')
+        ).filter((button) => !button.disabled);
+        if (enabledButtons.length < 2) return;
+
+        const currentIndex = enabledButtons.indexOf(target);
+        if (currentIndex < 0) return;
+
+        event.preventDefault();
+
+        if (event.key === 'Home') {
+            enabledButtons[0].focus();
+            return;
+        }
+        if (event.key === 'End') {
+            enabledButtons[enabledButtons.length - 1].focus();
+            return;
+        }
+
+        const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+        const nextIndex = (currentIndex + delta + enabledButtons.length) % enabledButtons.length;
+        enabledButtons[nextIndex].focus();
+    };
+
     private render(): void {
         const wrapper = document.createElement('div');
         wrapper.className = 'numbers-pool';
+        wrapper.setAttribute('role', 'group');
+        wrapper.setAttribute('aria-label', 'Available numbers');
 
         for (const token of this.tokens) {
             const element = document.createElement('number-token');
