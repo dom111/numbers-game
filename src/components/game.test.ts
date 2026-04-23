@@ -541,6 +541,31 @@ describe('NumbersGameElement', () => {
         expect(controls.getAttribute('aria-label')).toBe('Gameplay controls');
     });
 
+    it('moves focus between numbers, operators, and controls with arrow up/down', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        const firstNumber = el.querySelector('numbers-pool #n1 button') as HTMLButtonElement;
+        const plusOperator = el.querySelector(
+            'operator-buttons button[data-operator="+"]'
+        ) as HTMLButtonElement;
+        const resetButton = el.querySelector('button[data-action="reset"]') as HTMLButtonElement;
+
+        firstNumber.focus();
+        firstNumber.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+        );
+        expect(document.activeElement).toBe(plusOperator);
+
+        plusOperator.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+        );
+        expect(document.activeElement).toBe(resetButton);
+
+        resetButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+        expect(document.activeElement).toBe(plusOperator);
+    });
+
     it('renders hint messages in a polite live region', () => {
         el.setAttribute('target', '175');
         el.setAttribute('numbers', '1,5,7,9,50,75');

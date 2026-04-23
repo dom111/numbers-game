@@ -183,6 +183,7 @@ export class NumbersGameElement extends HTMLElement {
         this.addEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.addEventListener('click', this.onActionClick as EventListener);
         this.addEventListener('change', this.onControlChange as EventListener);
+        this.addEventListener('keydown', this.onDirectionalGroupNavigation as EventListener);
         window.addEventListener('hashchange', this.onHashChange);
         this.initializeFromAttributes();
         this.render();
@@ -197,6 +198,7 @@ export class NumbersGameElement extends HTMLElement {
         this.removeEventListener('step-token-remove', this.onStepTokenRemove as EventListener);
         this.removeEventListener('click', this.onActionClick as EventListener);
         this.removeEventListener('change', this.onControlChange as EventListener);
+        this.removeEventListener('keydown', this.onDirectionalGroupNavigation as EventListener);
         window.removeEventListener('hashchange', this.onHashChange);
     }
 
@@ -693,6 +695,53 @@ export class NumbersGameElement extends HTMLElement {
         if (!stepsList || !stepsList.contains(event.target as Node)) return;
 
         this.selectedTokenIds = this.selectedTokenIds.filter((id) => id !== event.detail.tokenId);
+    };
+
+    private getFocusableGroupButtons(): {
+        numbers: HTMLButtonElement[];
+        operators: HTMLButtonElement[];
+        controls: Array<HTMLButtonElement | HTMLSelectElement>;
+    } {
+        const numbers = Array.from(
+            this.querySelectorAll<HTMLButtonElement>('numbers-pool button:not(:disabled)')
+        );
+        const operators = Array.from(
+            this.querySelectorAll<HTMLButtonElement>('operator-buttons button:not(:disabled)')
+        );
+        const controls = Array.from(
+            this.querySelectorAll<HTMLButtonElement | HTMLSelectElement>(
+                '.game-controls button:not(:disabled), .game-controls select:not(:disabled)'
+            )
+        );
+
+        return { numbers, operators, controls };
+    }
+
+    private onDirectionalGroupNavigation = (event: KeyboardEvent): void => {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        const { numbers, operators, controls } = this.getFocusableGroupButtons();
+        const sourceGroups = [numbers, operators, controls].filter((group) => group.length > 0);
+        if (sourceGroups.length < 2) return;
+
+        const sourceGroupIndex = sourceGroups.findIndex((group) =>
+            group.some((element) => element === target)
+        );
+        if (sourceGroupIndex < 0) return;
+
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        const destinationGroup = sourceGroups[sourceGroupIndex + direction];
+        if (!destinationGroup || destinationGroup.length === 0) return;
+
+        const sourceGroup = sourceGroups[sourceGroupIndex];
+        const sourceIndex = sourceGroup.findIndex((element) => element === target);
+        const nextIndex = Math.min(sourceIndex, destinationGroup.length - 1);
+
+        event.preventDefault();
+        destinationGroup[nextIndex].focus();
     };
 
     private render(): void {
