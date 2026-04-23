@@ -66,6 +66,8 @@ Invalid means:
 - Keyboard support includes Tab/Shift+Tab for control traversal, Enter/Space to activate controls, arrow-key
   navigation within number-token and operator groups, and Up/Down movement between numbers, operators, and
   game controls.
+- Up/Down group navigation intentionally does not override native ArrowUp/ArrowDown behavior on the difficulty
+  select control.
 
 ## Round generation
 

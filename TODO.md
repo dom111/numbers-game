@@ -81,5 +81,5 @@
 - **Difficulty bands** are enforced by shortest-path length: `easy < 4` steps, `normal > 3` steps
 - **URL hash state** is live for difficulty preselection; the parser/serializer layer is ready for future full game-state sharing
 - **Hint system** now reuses the solver directly; future work should focus on responsiveness and UI polish
-- **Mobile responsiveness** should precede broader distribution
+- **Mobile responsiveness and baseline keyboard/a11y support** are now in place; next UX focus is visual feedback and onboarding/help
 - Prioritize items that directly improve player experience and reduce frustration

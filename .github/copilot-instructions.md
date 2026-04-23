@@ -88,6 +88,17 @@ Use these instructions for all code changes in this repository.
 - URL hash utilities (`parseHash`, `serializeHash`, `resolveDifficulty`) live in `src/lib/url-state.ts`.
 - Selector is placed in the main controls row next to `New game`, not above the numbers pool.
 
+## Accessibility and keyboard behavior
+
+- Keep explicit ARIA labels on gameplay regions and interactive controls (numbers, operators, steps, controls, target, hint/loading status).
+- Keep hint/loading status announcements on higher-level polite live regions; avoid noisy per-step live announcements.
+- Keyboard support must include:
+    - Tab/Shift+Tab traversal
+    - Enter/Space activation for interactive controls
+    - Left/Right (+ Home/End) movement within number/operator groups
+    - Up/Down movement between group levels (numbers → operators → controls)
+- Do not intercept native ArrowUp/ArrowDown behavior on form controls like the difficulty selector.
+
 - Guard parsing for component attributes:
     - numbers: finite positive integers only
     - targets: finite positive integer, otherwise safe fallback
