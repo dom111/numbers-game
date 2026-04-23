@@ -47,6 +47,7 @@
  *   the latest step and highlights it as rollback guidance.
  * - `New game` shows a temporary loading state while solvability validation runs.
  * - Changing the difficulty from the in-game selector immediately starts a new round in that mode.
+ * - Winning adds a lightweight decorative celebration effect; motion is disabled for reduced-motion users.
  */
 
 import './numbers.js';
@@ -820,6 +821,9 @@ export class NumbersGameElement extends HTMLElement {
 
         const wrapper = document.createElement('section');
         wrapper.className = 'game-board';
+        if (this.locked) {
+            wrapper.classList.add('is-won');
+        }
         wrapper.setAttribute('role', 'region');
         wrapper.setAttribute('aria-label', 'Numbers game board');
         const interactionLocked = this.locked || this.isGenerating;

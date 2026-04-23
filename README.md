@@ -90,6 +90,8 @@ Invalid means:
 
 - Interactive regions include explicit ARIA labels (numbers, operators, controls, steps, target, and hint/status).
 - Hint/loading messages are announced as polite live regions.
+- Winning triggers a lightweight decorative celebration burst on the game board; it is visual-only (no extra live-region announcements).
+- Under `prefers-reduced-motion: reduce`, win-celebration motion is disabled.
 - Mobile/touch sizing keeps interactive controls at touch-friendly heights.
 - `New game` is styled as the primary call-to-action while keeping reset/hint as secondary controls.
 - Easy mode shows a small visual badge beside the target; normal mode intentionally omits it.
