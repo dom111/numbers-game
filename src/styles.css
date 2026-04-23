@@ -319,6 +319,45 @@ h2 {
     margin: 1.5rem auto;
     max-width: 50rem;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-board.is-won::before,
+.game-board.is-won::after {
+    content: '';
+    position: absolute;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.game-board.is-won::before {
+    left: 25%;
+    top: 20%;
+    background: #fbbf24;
+    box-shadow:
+        0 0 0 0 #fbbf24,
+        2rem 1rem 0 0 #34d399,
+        -2rem 1.25rem 0 0 #60a5fa,
+        1.2rem 2.2rem 0 0 #f472b6,
+        -1.6rem 2rem 0 0 #f97316;
+    animation: winBurst 0.9s ease-out;
+}
+
+.game-board.is-won::after {
+    right: 24%;
+    top: 24%;
+    background: #a78bfa;
+    box-shadow:
+        0 0 0 0 #a78bfa,
+        -2rem 1rem 0 0 #fbbf24,
+        1.8rem 1.2rem 0 0 #22d3ee,
+        -1rem 2.1rem 0 0 #34d399,
+        1.4rem 2.15rem 0 0 #f87171;
+    animation: winBurst 0.95s ease-out 0.08s;
 }
 
 .game-board > h2 {
@@ -517,6 +556,21 @@ target-number .number-token {
     }
 }
 
+@keyframes winBurst {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.25);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .step-row.rollback-suggested {
         animation: none;
@@ -524,6 +578,12 @@ target-number .number-token {
 
     .number-token.is-selected:not(:disabled) {
         transform: none;
+    }
+
+    .game-board.is-won::before,
+    .game-board.is-won::after,
+    .game-top-status {
+        animation: none;
     }
 }
 

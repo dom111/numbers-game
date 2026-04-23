@@ -25,6 +25,7 @@
 - [ ] **Visual feedback** — Add animations/transitions on button clicks, selections, step completion
     - [x] Selected-number highlighting in the available numbers pool
     - [x] Easy-mode difficulty badge shown beside the target (hidden for normal mode)
+    - [x] Celebration animation on win (lightweight burst effect)
 
 ## Medium Priority
 
@@ -78,8 +79,8 @@
 - [ ] **Dark mode** — Optional theme toggle
 - [ ] **Sound effects** — Subtle audio feedback (optional, minimal)
 - [ ] **Multiplayer mode** — Future consideration for competitive play
-- [ ] Celebration animations on win (confetti, etc.) — keep light and non-distracting for younger players
-    - [ ] Start with a reduced-motion-safe sparkle/burst near the win banner
+- [x] Celebration animations on win (confetti, etc.) — keep light and non-distracting for younger players
+    - [x] Reduced-motion-safe sparkle/burst on win
 
 ## Notes
 

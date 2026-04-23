@@ -95,6 +95,45 @@ describe('NumbersGameElement', () => {
         const topStatus = document.body.querySelector('.game-top-status');
         expect(topStatus?.textContent).toBe('You won! Start a new game to play again.');
         expect(el.querySelector('.game-status')).toBeNull();
+        expect(el.querySelector('.game-board')?.classList.contains('is-won')).toBe(true);
+    });
+
+    it('removes celebratory board state after reset', () => {
+        el.setAttribute('target', '250');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }],
+                },
+            })
+        );
+
+        expect(el.querySelector('.game-board')?.classList.contains('is-won')).toBe(true);
+
+        (el.querySelector('button[data-action="reset"]') as HTMLButtonElement).click();
+
+        expect(el.querySelector('.game-board')?.classList.contains('is-won')).toBe(false);
+        expect(document.body.querySelector('.game-top-status')).toBeNull();
+    });
+
+    it('does not add extra live region nodes when showing win celebration', () => {
+        el.setAttribute('target', '250');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }],
+                },
+            })
+        );
+
+        const winLiveRegions = el.querySelectorAll('[aria-live]');
+        expect(winLiveRegions).toHaveLength(0);
     });
 
     it('smooth-scrolls to the top win banner when it is out of view', () => {
