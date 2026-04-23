@@ -833,6 +833,9 @@ export class NumbersGameElement extends HTMLElement {
 
         const target = document.createElement('target-number');
         target.setAttribute('value', String(this.target));
+        if (this.locked) {
+            target.setAttribute('celebrating', '');
+        }
 
         targetSection.append(target);
 

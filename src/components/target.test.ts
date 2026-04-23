@@ -46,4 +46,14 @@ describe('TargetNumberElement', () => {
         el.setAttribute('value', '999');
         expect(el.querySelector('number-token')?.getAttribute('value')).toBe('999');
     });
+
+    it('remains non-interactive when celebrating is toggled', () => {
+        el.setAttribute('celebrating', '');
+        expect(el.querySelector('number-token')?.hasAttribute('used')).toBe(true);
+        expect(el.querySelector('button')?.disabled).toBe(true);
+
+        el.removeAttribute('celebrating');
+        expect(el.querySelector('number-token')?.hasAttribute('used')).toBe(true);
+        expect(el.querySelector('button')?.disabled).toBe(true);
+    });
 });

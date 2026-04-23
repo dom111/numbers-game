@@ -96,6 +96,7 @@ describe('NumbersGameElement', () => {
         expect(topStatus?.textContent).toBe('You won! Start a new game to play again.');
         expect(el.querySelector('.game-status')).toBeNull();
         expect(el.querySelector('.game-board')?.classList.contains('is-won')).toBe(true);
+        expect(el.querySelector('target-number')?.hasAttribute('celebrating')).toBe(true);
     });
 
     it('removes celebratory board state after reset', () => {
@@ -116,6 +117,7 @@ describe('NumbersGameElement', () => {
         (el.querySelector('button[data-action="reset"]') as HTMLButtonElement).click();
 
         expect(el.querySelector('.game-board')?.classList.contains('is-won')).toBe(false);
+        expect(el.querySelector('target-number')?.hasAttribute('celebrating')).toBe(false);
         expect(document.body.querySelector('.game-top-status')).toBeNull();
     });
 

@@ -2,6 +2,7 @@
  * @purpose Displays the non-interactive target number for the current round.
  * @inputs
  * - `value` — the target integer for the active game; a whole positive integer in the range 1–999.
+ * - Optional `celebrating` — present only immediately after a win to enable decorative target animation.
  *
  * @outputs None; this component is display-only.
  *
@@ -13,7 +14,7 @@
 import './number.js';
 
 export class TargetNumberElement extends HTMLElement {
-    static readonly observedAttributes = ['value'] as const;
+    static readonly observedAttributes = ['value', 'celebrating'] as const;
 
     connectedCallback(): void {
         this.render();
