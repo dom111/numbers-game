@@ -62,7 +62,10 @@ export class NumberTokenElement extends HTMLElement {
         }
         button.textContent = String(this.tokenValue);
         button.disabled = this.isUsed || this.isLocked;
-        button.setAttribute('aria-pressed', String(this.isUsed));
+        // aria-pressed reflects selection state for available tokens; omitted when disabled
+        if (!this.isUsed && !this.isLocked) {
+            button.setAttribute('aria-pressed', String(this.isSelected));
+        }
         const customAriaLabel = this.getAttribute('aria-label');
         if (customAriaLabel) {
             button.setAttribute('aria-label', customAriaLabel);

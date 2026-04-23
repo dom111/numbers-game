@@ -63,6 +63,10 @@ describe('NumberTokenElement', () => {
             expect(button.classList.contains('is-selected')).toBe(true);
         });
 
+        it('aria-pressed is true when selected', () => {
+            expect(el.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+        });
+
         it('updates accessible label to selected', () => {
             expect(el.querySelector('button')?.getAttribute('aria-label')).toBe(
                 'Number 5, selected'
@@ -77,8 +81,8 @@ describe('NumberTokenElement', () => {
         it('button is disabled', () => {
             expect(el.querySelector('button')?.disabled).toBe(true);
         });
-        it('aria-pressed is true', () => {
-            expect(el.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+        it('aria-pressed is not set when disabled', () => {
+            expect(el.querySelector('button')?.getAttribute('aria-pressed')).toBeNull();
         });
         it('updates accessible label to unavailable', () => {
             expect(el.querySelector('button')?.getAttribute('aria-label')).toBe(
