@@ -449,6 +449,8 @@ describe('NumbersGameElement', () => {
             expect(el.querySelector('.loading-message')?.textContent).toBe(
                 'Generating new game...'
             );
+            expect(el.querySelector('.loading-message')?.getAttribute('role')).toBe('status');
+            expect(el.querySelector('.loading-message')?.getAttribute('aria-live')).toBe('polite');
 
             expect(
                 (el.querySelector('button[data-action="reset"]') as HTMLButtonElement).disabled
@@ -535,6 +537,19 @@ describe('NumbersGameElement', () => {
 
         expect(controls.contains(select)).toBe(true);
         expect(newGameButton.nextElementSibling).toBe(difficultyControls);
+        expect(controls.getAttribute('role')).toBe('group');
+        expect(controls.getAttribute('aria-label')).toBe('Gameplay controls');
+    });
+
+    it('renders hint messages in a polite live region', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+        const hintDisplay = el.querySelector('.hint-display') as HTMLElement;
+        expect(hintDisplay.getAttribute('role')).toBe('status');
+        expect(hintDisplay.getAttribute('aria-live')).toBe('polite');
     });
 
     it('changing difficulty attribute does not re-roll numbers or target', () => {

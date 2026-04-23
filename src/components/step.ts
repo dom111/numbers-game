@@ -166,6 +166,8 @@ export class StepEquationElement extends HTMLElement {
     private render(completePayload: StepCompletePayload | null, hasError: boolean): void {
         const wrapper = document.createElement('div');
         wrapper.className = 'step';
+        wrapper.setAttribute('role', 'group');
+        wrapper.setAttribute('aria-label', `Equation ${this.stepId || 'active step'}`);
 
         const expressionLine = document.createElement('p');
         expressionLine.className = 'step-expression-line';
@@ -184,6 +186,7 @@ export class StepEquationElement extends HTMLElement {
                 chip.className = 'step-chip';
                 chip.dataset.slot = slot;
                 chip.textContent = label;
+                chip.setAttribute('aria-label', `Remove ${slot} operand ${label}`);
                 chip.addEventListener('click', () => {
                     this.dispatchEvent(
                         new CustomEvent('step-token-remove', {
@@ -207,6 +210,7 @@ export class StepEquationElement extends HTMLElement {
 
         const value = document.createElement('span');
         value.className = 'step-value';
+        value.setAttribute('aria-live', 'polite');
         if (hasError) {
             value.classList.add('error');
         }

@@ -704,6 +704,8 @@ export class NumbersGameElement extends HTMLElement {
 
         const wrapper = document.createElement('section');
         wrapper.className = 'game-board';
+        wrapper.setAttribute('role', 'region');
+        wrapper.setAttribute('aria-label', 'Numbers game board');
         const interactionLocked = this.locked || this.isGenerating;
 
         const target = document.createElement('target-number');
@@ -719,6 +721,7 @@ export class NumbersGameElement extends HTMLElement {
         const difficultySelect = document.createElement('select');
         difficultySelect.id = this.difficultySelectorId;
         difficultySelect.dataset.action = 'difficulty';
+        difficultySelect.setAttribute('aria-label', 'Select difficulty');
 
         const normalOption = document.createElement('option');
         normalOption.value = 'normal';
@@ -758,23 +761,28 @@ export class NumbersGameElement extends HTMLElement {
 
         const controls = document.createElement('div');
         controls.className = 'game-controls';
+        controls.setAttribute('role', 'group');
+        controls.setAttribute('aria-label', 'Gameplay controls');
 
         const resetButton = document.createElement('button');
         resetButton.type = 'button';
         resetButton.dataset.action = 'reset';
         resetButton.textContent = 'Reset board';
+        resetButton.setAttribute('aria-label', 'Reset board');
         resetButton.disabled = this.isGenerating;
 
         const hintButton = document.createElement('button');
         hintButton.type = 'button';
         hintButton.dataset.action = 'hint';
         hintButton.textContent = 'Hint';
+        hintButton.setAttribute('aria-label', 'Show hint');
         hintButton.disabled = interactionLocked;
 
         const newGameButton = document.createElement('button');
         newGameButton.type = 'button';
         newGameButton.dataset.action = 'new';
         newGameButton.textContent = 'New game';
+        newGameButton.setAttribute('aria-label', 'Start new game');
         newGameButton.disabled = this.isGenerating;
 
         difficultySelect.disabled = this.isGenerating;
@@ -787,6 +795,8 @@ export class NumbersGameElement extends HTMLElement {
             const loadingMessage = document.createElement('p');
             loadingMessage.className = 'loading-message';
             loadingMessage.textContent = 'Generating new game...';
+            loadingMessage.setAttribute('role', 'status');
+            loadingMessage.setAttribute('aria-live', 'polite');
             wrapper.insertBefore(loadingMessage, controls);
         }
 
@@ -795,6 +805,9 @@ export class NumbersGameElement extends HTMLElement {
             const hintDisplay = document.createElement('p');
             hintDisplay.className = 'hint-display';
             hintDisplay.textContent = this.currentHint;
+            hintDisplay.setAttribute('role', 'status');
+            hintDisplay.setAttribute('aria-live', 'polite');
+            hintDisplay.setAttribute('aria-atomic', 'true');
             wrapper.insertBefore(hintDisplay, steps);
         }
 

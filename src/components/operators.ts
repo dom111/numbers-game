@@ -22,6 +22,13 @@ import type { Operator, OperatorSelectedPayload } from '../types.js';
 
 const OPERATORS: Operator[] = ['+', '-', '×', '÷'];
 
+const OPERATOR_ARIA_LABELS: Record<Operator, string> = {
+    '+': 'Add',
+    '-': 'Subtract',
+    '×': 'Multiply',
+    '÷': 'Divide',
+};
+
 const parsePositiveInt = (value: string | null): number | null => {
     if (value === null) return null;
     const parsed = Number.parseInt(value, 10);
@@ -36,7 +43,12 @@ export class OperatorButtonsElement extends HTMLElement {
     }
 
     connectedCallback(): void {
+        this.addEventListener('keydown', this.onKeyDown as EventListener);
         this.render();
+    }
+
+    disconnectedCallback(): void {
+        this.removeEventListener('keydown', this.onKeyDown as EventListener);
     }
 
     attributeChangedCallback(): void {
@@ -68,9 +80,46 @@ export class OperatorButtonsElement extends HTMLElement {
         return false;
     }
 
+    private onKeyDown = (event: KeyboardEvent): void => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const isArrowKey =
+            event.key === 'ArrowRight' ||
+            event.key === 'ArrowLeft' ||
+            event.key === 'ArrowDown' ||
+            event.key === 'ArrowUp';
+        const isHomeEnd = event.key === 'Home' || event.key === 'End';
+        if (!isArrowKey && !isHomeEnd) return;
+
+        const enabledButtons = Array.from(
+            this.querySelectorAll<HTMLButtonElement>('.operator-button')
+        ).filter((button) => !button.disabled);
+        if (enabledButtons.length < 2) return;
+
+        const currentIndex = enabledButtons.indexOf(target);
+        if (currentIndex < 0) return;
+
+        event.preventDefault();
+        if (event.key === 'Home') {
+            enabledButtons[0].focus();
+            return;
+        }
+        if (event.key === 'End') {
+            enabledButtons[enabledButtons.length - 1].focus();
+            return;
+        }
+
+        const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+        const nextIndex = (currentIndex + delta + enabledButtons.length) % enabledButtons.length;
+        enabledButtons[nextIndex].focus();
+    };
+
     private render(): void {
         const wrapper = document.createElement('div');
         wrapper.className = 'operators';
+        wrapper.setAttribute('role', 'group');
+        wrapper.setAttribute('aria-label', 'Operators');
 
         for (const operator of OPERATORS) {
             const button = document.createElement('button');
@@ -79,6 +128,7 @@ export class OperatorButtonsElement extends HTMLElement {
             button.textContent = operator;
             button.dataset.operator = operator;
             button.disabled = this.isLocked || this.isDisabled(operator);
+            button.setAttribute('aria-label', OPERATOR_ARIA_LABELS[operator]);
 
             if (!button.disabled) {
                 button.addEventListener('click', () => {

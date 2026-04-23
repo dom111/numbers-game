@@ -30,6 +30,9 @@ describe('TargetNumberElement', () => {
     it('number-token is always marked as used', () => {
         expect(el.querySelector('number-token')?.hasAttribute('used')).toBe(true);
     });
+    it('sets a target-specific aria-label on the token', () => {
+        expect(el.querySelector('number-token')?.getAttribute('aria-label')).toBe('Target 175');
+    });
     it('inner button is disabled (non-interactive)', () => {
         expect(el.querySelector('button')?.disabled).toBe(true);
     });

@@ -24,6 +24,21 @@ describe('OperatorButtonsElement', () => {
         expect(labels).toEqual(['+', '-', '×', '÷']);
     });
 
+    it('applies accessible labels for each operator button', () => {
+        expect(el.querySelector('button[data-operator="+"]')?.getAttribute('aria-label')).toBe(
+            'Add'
+        );
+        expect(el.querySelector('button[data-operator="-"]')?.getAttribute('aria-label')).toBe(
+            'Subtract'
+        );
+        expect(el.querySelector('button[data-operator="×"]')?.getAttribute('aria-label')).toBe(
+            'Multiply'
+        );
+        expect(el.querySelector('button[data-operator="÷"]')?.getAttribute('aria-label')).toBe(
+            'Divide'
+        );
+    });
+
     it('keeps operators enabled before operands are selected', () => {
         const buttons = Array.from(el.querySelectorAll('button')) as HTMLButtonElement[];
         expect(buttons.every((button) => !button.disabled)).toBe(true);
@@ -107,5 +122,15 @@ describe('OperatorButtonsElement', () => {
         const buttons = Array.from(el.querySelectorAll('button')) as HTMLButtonElement[];
         expect(buttons).toHaveLength(4);
         expect(buttons.every((button) => button.disabled)).toBe(true);
+    });
+
+    it('moves focus with arrow keys across enabled operators', () => {
+        const plus = el.querySelector('button[data-operator="+"]') as HTMLButtonElement;
+        const minus = el.querySelector('button[data-operator="-"]') as HTMLButtonElement;
+
+        plus.focus();
+        plus.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(document.activeElement).toBe(minus);
     });
 });

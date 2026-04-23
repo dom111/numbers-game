@@ -241,10 +241,13 @@ export class StepsListElement extends HTMLElement {
     private render(): void {
         const wrapper = document.createElement('div');
         wrapper.className = 'steps-list';
+        wrapper.setAttribute('role', 'list');
+        wrapper.setAttribute('aria-label', 'Completed and active steps');
 
         for (const step of this.steps) {
             const row = document.createElement('div');
             row.className = 'step-row';
+            row.setAttribute('role', 'listitem');
             if (this.rollbackStepId === step.id) {
                 row.classList.add('rollback-suggested');
             }
@@ -260,7 +263,7 @@ export class StepsListElement extends HTMLElement {
             removeButton.type = 'button';
             removeButton.className = 'step-remove-button';
             removeButton.dataset.removeStepId = step.id;
-            removeButton.setAttribute('aria-label', 'Remove step');
+            removeButton.setAttribute('aria-label', `Remove ${step.id}`);
             removeButton.title = 'Remove step';
             removeButton.textContent = '×';
             removeButton.disabled = this.isLocked;

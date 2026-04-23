@@ -48,7 +48,13 @@ describe('StepsListElement', () => {
 
         const removeButton = el.querySelector('button[data-remove-step-id="step-1"]');
         expect(removeButton?.textContent).toBe('×');
-        expect(removeButton?.getAttribute('aria-label')).toBe('Remove step');
+        expect(removeButton?.getAttribute('aria-label')).toBe('Remove step-1');
+    });
+
+    it('renders steps container with list semantics', () => {
+        const list = el.querySelector('.steps-list') as HTMLElement;
+        expect(list.getAttribute('role')).toBe('list');
+        expect(list.getAttribute('aria-label')).toBe('Completed and active steps');
     });
 
     it('fills active step operands from number-selected/operator-selected events', () => {
