@@ -763,7 +763,7 @@ export class NumbersGameElement extends HTMLElement {
         resetButton.type = 'button';
         resetButton.dataset.action = 'reset';
         resetButton.textContent = 'Reset board';
-        resetButton.disabled = interactionLocked;
+        resetButton.disabled = this.isGenerating;
 
         const hintButton = document.createElement('button');
         hintButton.type = 'button';
