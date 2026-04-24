@@ -44,9 +44,10 @@
     - [ ] Extend hash state to include steps/hint state for full in-progress sharing
 - [x] Using the date as a seed for daily challenges
 - [ ] **Daily challenge enhancements**
-    - [ ] **Stats tracking** — Store completion status and move counts for daily puzzles
-        - [ ] localStorage persistence of daily puzzle attempts (date, difficulty, completed, move count)
-        - [ ] Track completion status across easy/normal daily variants
+    - [x] **Stats tracking** — Store completion status and move counts for daily puzzles
+        - [x] localStorage persistence of daily puzzle attempts (date, difficulty, completed, move count)
+        - [x] Track completion status across easy/normal daily variants
+        - [x] Restore previously completed daily state (steps + win lock/celebration) on reload and daily difficulty switching
     - [ ] **Star rating system** — Award stars based on move efficiency vs. shortest path
         - [ ] Calculate move ratio: player moves vs. shortest solution length
         - [ ] Award scoring: 3 stars (best path), 2 stars (+ 1-2 moves), 1 star (+ 3+ moves), 0 stars (incomplete)
