@@ -7,6 +7,7 @@ import {
     getDailyPuzzleStats,
     recordDailyPuzzleWin,
     isDailyPuzzleCompleted,
+    clearDailyPuzzleStats,
     clearAllDailyStats,
 } from './daily-stats.js';
 
@@ -135,6 +136,22 @@ describe('daily-stats', () => {
     });
 
     describe('clearAllDailyStats', () => {
+        it('removes only the specified daily stats entry', () => {
+            const easySteps = [
+                { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
+            ];
+            const normalSteps = [
+                { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
+            ];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
+            recordDailyPuzzleWin('2026-04-24', 'normal', 1, normalSteps);
+
+            clearDailyPuzzleStats('2026-04-24', 'easy');
+
+            expect(isDailyPuzzleCompleted('2026-04-24', 'easy')).toBe(false);
+            expect(isDailyPuzzleCompleted('2026-04-24', 'normal')).toBe(true);
+        });
+
         it('removes all daily stats from localStorage', () => {
             const easySteps = [
                 { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },

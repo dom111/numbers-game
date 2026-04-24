@@ -15,8 +15,8 @@
 import type { GameDifficulty } from '../types.js';
 import { findSolution } from './solver.js';
 import { isInDifficultyBand } from './difficulty.js';
+import { drawSixFromStandardPool } from './number-pool.js';
 
-const NUMBER_POOL = [25, 50, 75, 100, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const MAX_DAILY_ATTEMPTS = 500;
 
 /**
@@ -62,14 +62,7 @@ export const mulberry32 = (seed: number): (() => number) => {
  * using the provided PRNG instead of `Math.random`.
  */
 const generateNumbersSeeded = (rand: () => number): number[] => {
-    const remaining = [...NUMBER_POOL];
-    const picks: number[] = [];
-    for (let i = 0; i < 6; i++) {
-        const index = Math.floor(rand() * remaining.length);
-        const [picked] = remaining.splice(index, 1);
-        picks.push(picked);
-    }
-    return picks;
+    return drawSixFromStandardPool(rand);
 };
 
 /**
@@ -90,6 +83,10 @@ export const generateDailyRound = (
     difficulty: GameDifficulty,
     dateKey: string = getDailyDateKey()
 ): { numbers: number[]; target: number; dateKey: string } => {
+    const startedAt =
+        typeof performance !== 'undefined' && typeof performance.now === 'function'
+            ? performance.now()
+            : Date.now();
     const seed = getDailySeed(dateKey, difficulty);
     const rand = mulberry32(seed);
 
@@ -124,6 +121,13 @@ export const generateDailyRound = (
         console.warn('[numbers-game] Daily puzzle band exhausted; using best solvable candidate.', {
             dateKey,
             difficulty,
+            attemptedPairs: MAX_DAILY_ATTEMPTS,
+            elapsedMs: Math.round(
+                (typeof performance !== 'undefined' && typeof performance.now === 'function'
+                    ? performance.now()
+                    : Date.now()) - startedAt
+            ),
+            seed,
             bestStepCount: bestCandidate.stepCount,
         });
         return { numbers: bestCandidate.numbers, target: bestCandidate.target, dateKey };
@@ -135,6 +139,13 @@ export const generateDailyRound = (
     console.warn('[numbers-game] Daily puzzle: using guaranteed-solvable fallback.', {
         dateKey,
         difficulty,
+        attemptedPairs: MAX_DAILY_ATTEMPTS,
+        elapsedMs: Math.round(
+            (typeof performance !== 'undefined' && typeof performance.now === 'function'
+                ? performance.now()
+                : Date.now()) - startedAt
+        ),
+        seed,
     });
     return { numbers: fallbackNumbers, target: fallbackTarget, dateKey };
 };

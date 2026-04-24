@@ -59,7 +59,12 @@ import { getHint, HintLevel } from '../lib/hint-engine.js';
 import { resolveDifficulty, serializeHash, parseHash } from '../lib/url-state.js';
 import { isInDifficultyBand, EASY_MAX_STEPS, NORMAL_MIN_STEPS } from '../lib/difficulty.js';
 import { generateDailyRound, getDailyDateKey } from '../lib/daily.js';
-import { recordDailyPuzzleWin, getDailyPuzzleStats } from '../lib/daily-stats.js';
+import {
+    recordDailyPuzzleWin,
+    getDailyPuzzleStats,
+    clearDailyPuzzleStats,
+} from '../lib/daily-stats.js';
+import { drawSixFromStandardPool } from '../lib/number-pool.js';
 import type {
     GameDifficulty,
     GameMode,
@@ -93,17 +98,7 @@ type StepTokenRemovePayload = {
 
 /** Generates six random numbers by drawing without replacement from the configured pool. */
 export const generateNumbers = (): number[] => {
-    const pool = [25, 50, 75, 100, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const remaining = [...pool];
-    const picks: number[] = [];
-
-    for (let i = 0; i < 6; i += 1) {
-        const index = Math.floor(Math.random() * remaining.length);
-        const [picked] = remaining.splice(index, 1);
-        picks.push(picked);
-    }
-
-    return picks;
+    return drawSixFromStandardPool(() => Math.random());
 };
 
 /** Generates an inclusive integer target in the range 1..999. */
@@ -273,25 +268,84 @@ export class NumbersGameElement extends HTMLElement {
 
     private restorePreviousDailyCompletion(): void {
         const stats = getDailyPuzzleStats(this.dailyDateKey, this.difficulty);
-        if (stats?.completed && stats.steps) {
-            // Restore the completed steps
-            this.steps = [...stats.steps];
-            this.locked = true;
+        if (!stats?.completed || !stats.steps) return;
 
-            // Rebuild token pool to match the completed state
-            this.tokens = toTokens(this.baseNumbers);
-            this.nextTokenId = this.tokens.length + 1;
-
-            for (const step of this.steps) {
-                consumeByValue(this.tokens, step.left);
-                consumeByValue(this.tokens, step.right);
-                this.tokens.push({
-                    id: `n${this.nextTokenId++}`,
-                    value: step.value,
-                    used: false,
-                });
-            }
+        if (!this.canRestorePreviousDailyCompletion(stats.steps)) {
+            clearDailyPuzzleStats(this.dailyDateKey, this.difficulty);
+            return;
         }
+
+        // Restore the completed steps
+        this.steps = [...stats.steps];
+        this.locked = true;
+
+        // Rebuild token pool to match the completed state
+        this.tokens = toTokens(this.baseNumbers);
+        this.nextTokenId = this.tokens.length + 1;
+
+        for (const step of this.steps) {
+            consumeByValue(this.tokens, step.left);
+            consumeByValue(this.tokens, step.right);
+            this.tokens.push({
+                id: `n${this.nextTokenId++}`,
+                value: step.value,
+                used: false,
+            });
+        }
+    }
+
+    private getRestoredStepValue(step: StepData): number | null {
+        switch (step.operator) {
+            case '+':
+                return step.left + step.right;
+            case '-': {
+                const result = step.left - step.right;
+                return result >= 1 ? result : null;
+            }
+            case '×':
+                return step.left * step.right;
+            case '÷':
+                return step.right !== 0 && step.left % step.right === 0
+                    ? step.left / step.right
+                    : null;
+            default:
+                return null;
+        }
+    }
+
+    private consumeAvailableValue(values: number[], value: number): boolean {
+        const index = values.indexOf(value);
+        if (index < 0) return false;
+        values.splice(index, 1);
+        return true;
+    }
+
+    private canRestorePreviousDailyCompletion(steps: StepData[]): boolean {
+        if (!Array.isArray(steps) || steps.length === 0) return false;
+
+        const availableValues = [...this.baseNumbers];
+        for (const step of steps) {
+            if (
+                !Number.isInteger(step.left) ||
+                step.left < 1 ||
+                !Number.isInteger(step.right) ||
+                step.right < 1 ||
+                !Number.isInteger(step.value) ||
+                step.value < 1
+            ) {
+                return false;
+            }
+
+            const computedValue = this.getRestoredStepValue(step);
+            if (computedValue === null || computedValue !== step.value) return false;
+
+            if (!this.consumeAvailableValue(availableValues, step.left)) return false;
+            if (!this.consumeAvailableValue(availableValues, step.right)) return false;
+
+            availableValues.push(step.value);
+        }
+
+        return steps[steps.length - 1].value === this.target;
     }
 
     private onHashChange = (): void => {
