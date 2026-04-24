@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getDailyDateKey, getDailySeed, mulberry32, generateDailyRound } from './daily.js';
+import { findSolution } from './solver.js';
+import { isInDifficultyBand } from './difficulty.js';
 
 describe('getDailyDateKey', () => {
     it('returns a YYYY-MM-DD string', () => {
@@ -54,9 +56,11 @@ describe('mulberry32', () => {
     });
 
     it('produces different sequences for different seeds', () => {
-        const a = mulberry32(1)();
-        const b = mulberry32(2)();
-        expect(a).not.toBe(b);
+        const randA = mulberry32(1);
+        const randB = mulberry32(2);
+        const sequenceA = Array.from({ length: 20 }, () => randA());
+        const sequenceB = Array.from({ length: 20 }, () => randB());
+        expect(sequenceA).not.toEqual(sequenceB);
     });
 });
 
@@ -68,20 +72,28 @@ describe('generateDailyRound', () => {
         expect(r1.target).toBe(r2.target);
     });
 
-    it('produces different results for different dates', () => {
-        const r1 = generateDailyRound('normal', '2026-04-24');
-        const r2 = generateDailyRound('normal', '2026-04-25');
-        // Very unlikely to collide
-        const same = r1.target === r2.target && r1.numbers.join(',') === r2.numbers.join(',');
-        expect(same).toBe(false);
+    it('is stable for fixed date/difficulty inputs', () => {
+        const cases = [
+            { difficulty: 'easy' as const, dateKey: '2026-04-24' },
+            { difficulty: 'normal' as const, dateKey: '2026-04-24' },
+            { difficulty: 'normal' as const, dateKey: '2026-04-25' },
+        ];
+
+        for (const { difficulty, dateKey } of cases) {
+            const first = generateDailyRound(difficulty, dateKey);
+            const second = generateDailyRound(difficulty, dateKey);
+
+            expect(first.numbers).toEqual(second.numbers);
+            expect(first.target).toBe(second.target);
+            expect(first.dateKey).toBe(dateKey);
+            expect(second.dateKey).toBe(dateKey);
+        }
     });
 
-    it('produces different results for different difficulties', () => {
-        const easy = generateDailyRound('easy', '2026-04-24');
-        const normal = generateDailyRound('normal', '2026-04-24');
-        const same =
-            easy.target === normal.target && easy.numbers.join(',') === normal.numbers.join(',');
-        expect(same).toBe(false);
+    it('uses different seeds for different difficulties on the same date', () => {
+        const easySeed = getDailySeed('2026-04-24', 'easy');
+        const normalSeed = getDailySeed('2026-04-24', 'normal');
+        expect(easySeed).not.toBe(normalSeed);
     });
 
     it('returns exactly six numbers', () => {
@@ -113,22 +125,23 @@ describe('generateDailyRound', () => {
         expect(r.dateKey).toBe('2026-04-24');
     });
 
-    it('generates a solvable easy puzzle', () => {
-        // Run across several dates to build confidence
+    it('generates solvable easy puzzles in the easy difficulty band', () => {
         const dates = ['2026-04-24', '2026-04-25', '2026-04-26', '2026-05-01'];
         for (const date of dates) {
             const r = generateDailyRound('easy', date);
-            expect(r.numbers).toHaveLength(6);
-            expect(r.target).toBeGreaterThan(0);
+            const solution = findSolution(r.numbers, r.target);
+            expect(solution.found).toBe(true);
+            expect(isInDifficultyBand('easy', solution.steps.length)).toBe(true);
         }
     });
 
-    it('generates a solvable normal puzzle', () => {
+    it('generates solvable normal puzzles in the normal difficulty band', () => {
         const dates = ['2026-04-24', '2026-04-25', '2026-04-26', '2026-05-01'];
         for (const date of dates) {
             const r = generateDailyRound('normal', date);
-            expect(r.numbers).toHaveLength(6);
-            expect(r.target).toBeGreaterThan(0);
+            const solution = findSolution(r.numbers, r.target);
+            expect(solution.found).toBe(true);
+            expect(isInDifficultyBand('normal', solution.steps.length)).toBe(true);
         }
     });
 });
