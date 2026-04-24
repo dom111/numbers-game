@@ -166,6 +166,8 @@ Use a canonical representation of available token values (sorted ascending) to c
     - `normal` accepts `> 3` steps
 - If retries exhaust without an in-band result, generation falls back to best available solvable candidate and
   logs retry diagnostics.
+- Win summaries now also use the solver shortest path to compute a star rating from player efficiency (`3/3`,
+  `2/3`, `1/3`), and daily results persist this rating metadata.
 
 ## Future Enhancements
 
