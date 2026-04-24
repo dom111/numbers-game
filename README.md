@@ -101,9 +101,15 @@ Invalid means:
 - The active mode can be preselected with hash params:
     - `#difficulty=easy`
     - `#difficulty=normal`
+- Daily mode can also be preselected:
+    - `#mode=daily`
+    - `#difficulty=easy&mode=daily`
 - Resolution precedence is: `difficulty` attribute on `<numbers-game>` > URL hash > default (`normal`).
+- `mode` is hash-driven (`daily` or `random`), and `random` is omitted from hash serialization as the default.
 - Changing the selector updates the hash with `history.replaceState` so links can be shared without page reload.
 - Selector changes also start a new generated round for the newly selected mode.
+- Hash changes that alter mode/difficulty trigger round regeneration, while a valid `difficulty` attribute still overrides hash difficulty.
+- Daily puzzle generation is deterministic by UTC date key (`YYYY-MM-DD`) + difficulty so everyone gets the same puzzle regardless of locale/timezone.
 
 ## Development
 
@@ -141,5 +147,5 @@ This repo is configured to deploy to `https://dom111.github.io/numbers-game/` us
 
 ## Planned: URL game-state sharing
 
-- Current hash support includes difficulty selection only.
+- Current hash support includes difficulty + mode selection.
 - Next phase extends the same parser/serializer layer for full round/state sharing via URL.

@@ -414,6 +414,18 @@ h2 {
     box-shadow: var(--shadow-sm);
 }
 
+.daily-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-sm);
+}
+
 target-number {
     display: flex;
     justify-content: center;

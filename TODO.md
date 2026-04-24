@@ -39,9 +39,10 @@
 - [ ] **Game statistics** — Track games played, win rate, fastest completion times
 - [ ] **URL sharing** — Encode current game state in URL for sharing specific rounds
     - [x] First step: support URL hash preselection for difficulty (`#difficulty=easy`) using reusable parser logic
+    - [x] Add URL hash mode support for deterministic daily puzzles (`#mode=daily`)
     - [ ] Extend hash state to include numbers + target for round links
     - [ ] Extend hash state to include steps/hint state for full in-progress sharing
-- [ ] Using the date as a seed for daily challenges
+- [x] Using the date as a seed for daily challenges
 - [ ] Time tracking (optionally, so as not to pressure younger players)
 
 ### Game Logic Enhancements
@@ -86,7 +87,7 @@
 
 - **Validation solver** is now in place; unwinnable rounds are avoided by bounded-retry generation with a guaranteed-solvable fallback
 - **Difficulty bands** are enforced by shortest-path length: `easy < 4` steps, `normal > 3` steps
-- **URL hash state** is live for difficulty preselection; the parser/serializer layer is ready for future full game-state sharing
+- **URL hash state** is live for difficulty + mode preselection; daily mode uses UTC date-key deterministic generation
 - **Hint system** now reuses the solver directly; future work should focus on responsiveness and UI polish
 - **Mobile responsiveness and baseline keyboard/a11y support** are now in place; next UX focus is visual feedback and onboarding/help
 - Prioritize items that directly improve player experience and reduce frustration

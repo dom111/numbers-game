@@ -12,6 +12,9 @@ export type Operator = '+' | '-' | '×' | '÷';
 /** Supported round difficulty modes. */
 export type GameDifficulty = 'normal' | 'easy';
 
+/** Game play mode — random generation or a deterministic daily puzzle. */
+export type GameMode = 'random' | 'daily';
+
 /** Source used to resolve the active round configuration. */
 export type RoundConfigSource = 'default' | 'hash' | 'attribute';
 
@@ -21,9 +24,10 @@ export interface ResolvedRoundConfig {
     source: RoundConfigSource;
 }
 
-/** URL-backed game state (phase 1: difficulty only). */
+/** URL-backed game state (currently difficulty + mode). */
 export interface UrlGameState {
     difficulty: GameDifficulty;
+    mode: GameMode;
 }
 
 /**
