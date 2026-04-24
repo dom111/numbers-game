@@ -77,7 +77,8 @@ Invalid means:
 - Gameplay controls are disabled while generation/validation is running.
 - The app retries target generation to prefer solvable rounds.
 - Difficulty can be chosen as `Normal` or `Easy` from the game UI.
-- Changing difficulty from the selector updates mode and immediately generates a fresh round in that mode.
+- Changing difficulty from the selector updates mode and immediately generates a fresh round in that mode,
+  unless a valid `difficulty` attribute is controlling the component.
 - Difficulty bands are based on shortest-solution length from the solver:
     - `Easy`: shortest path must be `< 4` steps
     - `Normal`: shortest path must be `> 3` steps
@@ -95,6 +96,10 @@ Invalid means:
 - Mobile/touch sizing keeps interactive controls at touch-friendly heights.
 - `New game` is styled as the primary call-to-action while keeping reset/hint as secondary controls.
 - Easy mode shows a small visual badge beside the target; normal mode intentionally omits it.
+- On win, the board also shows a rating based on efficiency versus the shortest solver path:
+    - `3/3` stars: matched shortest path
+    - `2/3` stars: shortest + 1..2 moves
+    - `1/3` stars: shortest + 3 or more moves
 
 ## Difficulty + URL hash
 
@@ -106,13 +111,17 @@ Invalid means:
     - `#difficulty=easy&mode=daily`
 - Resolution precedence is: `difficulty` attribute on `<numbers-game>` > URL hash > default (`normal`).
 - `mode` is hash-driven (`daily` or `random`), and `random` is omitted from hash serialization as the default.
-- Changing the selector updates the hash with `history.replaceState` so links can be shared without page reload.
-- Selector changes also start a new generated round for the newly selected mode.
+- Changing the selector updates the hash with `history.replaceState` so links can be shared without page reload,
+  except when a valid `difficulty` attribute is authoritative.
+- Selector changes also start a new generated round for the newly selected mode, except when attribute control
+  causes the selector change to be ignored.
 - Hash changes that alter mode/difficulty trigger round regeneration, while a valid `difficulty` attribute still overrides hash difficulty.
 - Daily puzzle generation is deterministic by UTC date key (`YYYY-MM-DD`) + difficulty so everyone gets the same puzzle regardless of locale/timezone.
 - Daily completion is persisted per `date + difficulty` in `localStorage` (easy/normal tracked independently).
+- Daily completion stores move count, shortest-path length, and star rating so restored daily wins keep the same summary.
 - Re-opening a completed daily puzzle restores the completed steps, lock state, and win celebration.
 - Switching difficulty in daily mode re-checks persisted completion for that difficulty and restores win state when applicable.
+- Daily wins expose a `Share result` action that prefers Web Share API and falls back to clipboard copy when available.
 
 ## Development
 

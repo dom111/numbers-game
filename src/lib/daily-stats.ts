@@ -16,12 +16,16 @@ import type { GameDifficulty, StepData } from '../types.js';
  *
  * @property completed - Whether the puzzle was solved.
  * @property moveCount - Number of steps used to complete the puzzle (null if not completed).
+ * @property shortestStepCount - Shortest known solution length for the puzzle.
+ * @property stars - Player rating based on moveCount versus shortestStepCount.
  * @property completedAt - ISO timestamp of when the puzzle was completed (null if not completed).
  * @property steps - The steps used to solve the puzzle (null if not completed).
  */
 export interface DailyPuzzleStats {
     completed: boolean;
     moveCount: number | null;
+    shortestStepCount: number | null;
+    stars: number | null;
     completedAt: string | null;
     steps: StepData[] | null;
 }
@@ -55,7 +59,15 @@ export const getDailyPuzzleStats = (
     if (!stored) return null;
 
     try {
-        return JSON.parse(stored) as DailyPuzzleStats;
+        const parsed = JSON.parse(stored) as Partial<DailyPuzzleStats>;
+        return {
+            completed: parsed.completed ?? false,
+            moveCount: parsed.moveCount ?? null,
+            shortestStepCount: parsed.shortestStepCount ?? null,
+            stars: parsed.stars ?? null,
+            completedAt: parsed.completedAt ?? null,
+            steps: parsed.steps ?? null,
+        };
     } catch {
         console.warn(`[numbers-game] Failed to parse daily stats for ${key}`);
         return null;
@@ -69,17 +81,23 @@ export const getDailyPuzzleStats = (
  * @param difficulty - The difficulty level ('easy' or 'normal')
  * @param moveCount - Number of steps used to reach the target
  * @param steps - The steps used to solve the puzzle
+ * @param shortestStepCount - The shortest-path step length for this puzzle
+ * @param stars - The player star rating for this completion
  */
 export const recordDailyPuzzleWin = (
     dateKey: string,
     difficulty: GameDifficulty,
     moveCount: number,
-    steps: StepData[]
+    steps: StepData[],
+    shortestStepCount: number | null = null,
+    stars: number | null = null
 ): void => {
     const key = getStatsKey(dateKey, difficulty);
     const stats: DailyPuzzleStats = {
         completed: true,
         moveCount,
+        shortestStepCount,
+        stars,
         completedAt: new Date().toISOString(),
         steps,
     };

@@ -235,9 +235,82 @@ describe('NumbersGameElement', () => {
             expect(stats).not.toBeNull();
             expect(stats?.completed).toBe(true);
             expect(stats?.moveCount).toBe(solvedSteps.length);
+            expect(stats?.shortestStepCount).toBeGreaterThanOrEqual(1);
+            expect(stats?.stars).toBeGreaterThanOrEqual(1);
+            expect(stats?.stars).toBeLessThanOrEqual(3);
             expect(stats?.completedAt).toBeTruthy();
             expect(stats?.steps).toEqual(solvedSteps);
         } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('renders a star rating using player moves versus shortest path after winning', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+
+        const stepsList = el.querySelector('steps-list') as HTMLElement;
+        stepsList.dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [
+                        { id: 'step-1', left: 5, operator: '+', right: 1, value: 6 },
+                        { id: 'step-2', left: 75, operator: '-', right: 50, value: 25 },
+                        { id: 'step-3', left: 25, operator: '×', right: 7, value: 175 },
+                    ],
+                },
+            })
+        );
+
+        const rating = el.querySelector('.win-rating')?.textContent ?? '';
+        expect(rating).toContain('2/3 stars');
+        expect(rating).toContain('Moves 3 vs best 2');
+    });
+
+    it('shares daily results via clipboard fallback when web-share is unavailable', async () => {
+        const originalNavigator = globalThis.navigator;
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            const clipboardSpy = vi.fn().mockResolvedValue(undefined);
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
+
+            const solvedSteps = getSolvedStepsForRenderedRound();
+            const stepsList = el.querySelector('steps-list') as HTMLElement;
+            stepsList.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: solvedSteps },
+                })
+            );
+
+            const shareButton = el.querySelector(
+                'button[data-action="share"]'
+            ) as HTMLButtonElement;
+            expect(shareButton).not.toBeNull();
+            shareButton.click();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(clipboardSpy).toHaveBeenCalledOnce();
+            const statusText = el.querySelector('.share-status')?.textContent ?? '';
+            expect(statusText).toBe('Copied result to clipboard.');
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: originalNavigator,
+            });
             vi.useRealTimers();
         }
     });
@@ -364,6 +437,10 @@ describe('NumbersGameElement', () => {
             // Board should have is-won class
             const gameBoard = el.querySelector('.game-board');
             expect(gameBoard?.classList.contains('is-won')).toBe(true);
+
+            const restoredRating = el.querySelector('.win-rating')?.textContent ?? '';
+            expect(restoredRating).toContain('/3 stars');
+            expect(el.querySelector('button[data-action="share"]')).not.toBeNull();
         } finally {
             vi.useRealTimers();
         }

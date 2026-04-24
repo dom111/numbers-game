@@ -48,18 +48,18 @@
         - [x] localStorage persistence of daily puzzle attempts (date, difficulty, completed, move count)
         - [x] Track completion status across easy/normal daily variants
         - [x] Restore previously completed daily state (steps + win lock/celebration) on reload and daily difficulty switching
-    - [ ] **Star rating system** — Award stars based on move efficiency vs. shortest path
-        - [ ] Calculate move ratio: player moves vs. shortest solution length
-        - [ ] Award scoring: 3 stars (best path), 2 stars (+ 1-2 moves), 1 star (+ 3+ moves), 0 stars (incomplete)
-        - [ ] Display star count on daily puzzle win screen
+    - [x] **Star rating system** — Award stars based on move efficiency vs. shortest path
+        - [x] Calculate move ratio: player moves vs. shortest solution length
+        - [x] Award scoring: 3 stars (best path), 2 stars (+ 1-2 moves), 1 star (+ 3+ moves), 0 stars (incomplete)
+        - [x] Display star count on daily puzzle win screen
     - [ ] **Timed mode for daily** — Optional timer variant of daily challenges
         - [ ] Add mode toggle for `timed` variant alongside `daily` mode
         - [ ] Countdown timer display during play (e.g., 10 minutes)
         - [ ] Allow completion with/without time limit, score differently
-    - [ ] **Share link on win** — Generate shareable URL with puzzle date, difficulty, and result
-        - [ ] Include star count and shortest path in share text
-        - [ ] Format: `Daily numbers game <date>: ⭐⭐⭐ / <shortest-path-length>\n<url-with-hash>`
-        - [ ] Copy-to-clipboard UI for easy sharing
+    - [x] **Share link on win** — Generate shareable URL with puzzle date, difficulty, and result
+        - [x] Include star count and shortest path in share text
+        - [x] Format: `Daily numbers game <date> (<difficulty>): <stars>/3 stars\nMoves: <moves> (best <shortest>)\n<url-with-hash>`
+        - [x] Copy-to-clipboard UI for easy sharing
 - [ ] Time tracking (optionally, so as not to pressure younger players)
 
 ### Game Logic Enhancements

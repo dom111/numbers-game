@@ -65,6 +65,8 @@ import {
     clearDailyPuzzleStats,
 } from '../lib/daily-stats.js';
 import { drawSixFromStandardPool } from '../lib/number-pool.js';
+import { getStarRating } from '../lib/rating.js';
+import { buildDailyShareText, shareText } from '../lib/share.js';
 import type {
     GameDifficulty,
     GameMode,
@@ -172,6 +174,12 @@ export class NumbersGameElement extends HTMLElement {
     private isGenerating = false;
 
     private generationTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    private winShortestStepCount: number | null = null;
+
+    private winStars: number | null = null;
+
+    private shareStatus = '';
 
     private readonly topWinBannerId = `numbers-game-win-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -292,7 +300,80 @@ export class NumbersGameElement extends HTMLElement {
                 used: false,
             });
         }
+
+        this.setWinPerformance(this.steps.length, stats.shortestStepCount, stats.stars);
     }
+
+    private getShortestSolutionStepCount(): number | null {
+        const solution = findSolution(this.baseNumbers, this.target);
+        if (!solution.found || solution.steps.length < 1) {
+            return null;
+        }
+        return solution.steps.length;
+    }
+
+    private setWinPerformance(
+        playerSteps: number,
+        persistedShortestStepCount?: number | null,
+        persistedStars?: number | null
+    ): void {
+        const shortestStepCount =
+            persistedShortestStepCount && persistedShortestStepCount >= 1
+                ? persistedShortestStepCount
+                : this.getShortestSolutionStepCount();
+
+        if (!shortestStepCount || shortestStepCount < 1) {
+            this.winShortestStepCount = null;
+            this.winStars = null;
+            return;
+        }
+
+        this.winShortestStepCount = shortestStepCount;
+        this.winStars =
+            persistedStars !== undefined && persistedStars !== null
+                ? Math.max(0, Math.min(3, Math.floor(persistedStars)))
+                : getStarRating(playerSteps, shortestStepCount);
+    }
+
+    private getDailyShareUrl(): string {
+        const hash = serializeHash({ difficulty: this.difficulty, mode: 'daily' });
+        return `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
+    }
+
+    private getDailySharePayload(): string | null {
+        if (
+            !this.locked ||
+            this.mode !== 'daily' ||
+            !this.winShortestStepCount ||
+            this.winStars === null
+        ) {
+            return null;
+        }
+
+        return buildDailyShareText({
+            dateKey: this.dailyDateKey,
+            difficulty: this.difficulty,
+            stars: this.winStars,
+            shortestStepCount: this.winShortestStepCount,
+            moveCount: this.steps.length,
+            url: this.getDailyShareUrl(),
+        });
+    }
+
+    private handleShare = async (): Promise<void> => {
+        const payload = this.getDailySharePayload();
+        if (!payload) return;
+
+        const outcome = await shareText(payload);
+        if (outcome === 'shared') {
+            this.shareStatus = 'Shared result.';
+        } else if (outcome === 'copied') {
+            this.shareStatus = 'Copied result to clipboard.';
+        } else {
+            this.shareStatus = 'Share APIs unavailable. Copy the text below manually.';
+        }
+        this.render();
+    };
 
     private getRestoredStepValue(step: StepData): number | null {
         switch (step.operator) {
@@ -433,6 +514,9 @@ export class NumbersGameElement extends HTMLElement {
         this.hintLevel = HintLevel.NextOperands;
         this.currentHint = '';
         this.rollbackHintStepId = null;
+        this.winShortestStepCount = null;
+        this.winStars = null;
+        this.shareStatus = '';
     }
 
     private clearGenerationTimeout(): void {
@@ -762,6 +846,11 @@ export class NumbersGameElement extends HTMLElement {
             this.startNewGameGeneration();
             return;
         }
+
+        if (action === 'share') {
+            void this.handleShare();
+            return;
+        }
     };
 
     private setNoHintAvailableState(): void {
@@ -859,13 +948,17 @@ export class NumbersGameElement extends HTMLElement {
         const becameLocked = Boolean(latest && latest.value === this.target);
         this.locked = becameLocked;
         if (this.locked && latest) {
+            this.setWinPerformance(this.steps.length);
+
             // Record win for daily puzzles
             if (this.mode === 'daily') {
                 recordDailyPuzzleWin(
                     this.dailyDateKey,
                     this.difficulty,
                     this.steps.length,
-                    this.steps
+                    this.steps,
+                    this.winShortestStepCount,
+                    this.winStars
                 );
             }
 
@@ -1117,6 +1210,69 @@ export class NumbersGameElement extends HTMLElement {
         controls.append(resetButton, hintButton, newGameButton, dailyButton, difficultyControls);
 
         wrapper.append(targetSection, pool, operatorsSection, steps, controls);
+
+        if (this.locked && this.winShortestStepCount && this.winStars !== null) {
+            const winSummary = document.createElement('div');
+            winSummary.className = 'win-summary';
+
+            const rating = document.createElement('p');
+            rating.className = 'win-rating';
+
+            // Create star rating display with separate styling for filled/empty stars
+            const starsSpan = document.createElement('span');
+            starsSpan.className = 'star-rating';
+
+            // Add filled stars
+            for (let i = 0; i < this.winStars; i++) {
+                const filledStar = document.createElement('span');
+                filledStar.className = 'star-filled';
+                filledStar.textContent = '⭐';
+                starsSpan.append(filledStar);
+            }
+
+            // Add empty stars
+            for (let i = 0; i < 3 - this.winStars; i++) {
+                const emptyStar = document.createElement('span');
+                emptyStar.className = 'star-empty';
+                emptyStar.textContent = '☆';
+                starsSpan.append(emptyStar);
+            }
+
+            rating.append(
+                'Rating: ',
+                starsSpan,
+                ` (${this.winStars}/3 stars) · Moves ${this.steps.length} vs best ${this.winShortestStepCount}`
+            );
+            winSummary.append(rating);
+
+            if (this.mode === 'daily') {
+                const shareButton = document.createElement('button');
+                shareButton.type = 'button';
+                shareButton.dataset.action = 'share';
+                shareButton.className = 'share-button';
+                shareButton.textContent = 'Share result';
+                shareButton.setAttribute('aria-label', 'Share daily result');
+                shareButton.disabled = this.isGenerating;
+                winSummary.append(shareButton);
+
+                const sharePreview = document.createElement('pre');
+                sharePreview.className = 'share-preview';
+                sharePreview.textContent = this.getDailySharePayload() ?? '';
+                winSummary.append(sharePreview);
+
+                if (this.shareStatus) {
+                    const shareStatus = document.createElement('p');
+                    shareStatus.className = 'share-status';
+                    shareStatus.textContent = this.shareStatus;
+                    shareStatus.setAttribute('role', 'status');
+                    shareStatus.setAttribute('aria-live', 'polite');
+                    shareStatus.setAttribute('aria-atomic', 'true');
+                    winSummary.append(shareStatus);
+                }
+            }
+
+            wrapper.insertBefore(winSummary, controls);
+        }
 
         if (this.isGenerating) {
             const loadingMessage = document.createElement('p');

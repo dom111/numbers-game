@@ -105,15 +105,18 @@ Current use covers `difficulty` + `mode`, and the structure is designed to expan
     - Re-resolves on `hashchange`; valid `difficulty` attribute still overrides hash difficulty, while hash mode changes still apply
     - Passes difficulty into new-game generation
     - Syncs selector changes back into hash using `history.replaceState`, skipping hash writes when `source === 'attribute'`
-    - Selector-driven difficulty changes immediately trigger new-round generation in the selected mode
+    - Selector-driven difficulty changes immediately trigger new-round generation in the selected mode when applied;
+      if a valid `difficulty` attribute is authoritative, selector changes are ignored and no re-roll occurs
     - Daily mode generation is deterministic via UTC date key + difficulty and can be entered via hash or `Daily puzzle` button
     - Daily mode checks persisted completion state by `date + difficulty`; if completed, prior steps and win lock/celebration are restored on load and on selector-driven daily difficulty changes
+    - Daily win summaries include shortest-path comparison (`moves` vs `best`) and star rating, persisted in daily stats for stable restore behavior
+    - Daily wins expose a `Share result` action that uses Web Share API when available and clipboard fallback otherwise
     - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
     - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`
 - UI
     - Difficulty selector (`Normal`/`Easy`) in the main controls row next to `New game`
-    - Selector updates hash for shareable preselected mode links and starts a new round
+    - Selector updates hash for shareable preselected mode links and starts a new round when not attribute-controlled
     - Easy mode displays a small badge near the target to make mode state obvious during play
 
 ## Testing Plan
