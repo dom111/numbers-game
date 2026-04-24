@@ -3,9 +3,9 @@
  */
 
 /** Standard Countdown-style pool: 2x 1..10 and 1x 25/50/75/100. */
-export const STANDARD_NUMBER_POOL: number[] = [
+export const STANDARD_NUMBER_POOL: readonly number[] = Object.freeze([
     25, 50, 75, 100, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-];
+]);
 
 /** Draws six numbers without replacement using the provided random source. */
 export const drawSixFromStandardPool = (rand: () => number): number[] => {

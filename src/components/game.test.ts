@@ -1046,7 +1046,14 @@ describe('NumbersGameElement', () => {
     });
 
     it('ignores selector difficulty changes when a valid difficulty attribute is authoritative', () => {
+        el.setAttribute('target', '175');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
         el.setAttribute('difficulty', 'easy');
+
+        const targetBefore = el.querySelector('target-number')?.getAttribute('value');
+        const tokensBefore = Array.from(el.querySelectorAll('numbers-pool number-token')).map(
+            (t) => t.textContent
+        );
 
         const select = el.querySelector(
             '.difficulty-controls select[data-action="difficulty"]'
@@ -1059,6 +1066,11 @@ describe('NumbersGameElement', () => {
             '.difficulty-controls select[data-action="difficulty"]'
         ) as HTMLSelectElement;
         expect(updatedSelect.value).toBe('easy');
+        expect(el.querySelector('.loading-message')).toBeNull();
+        expect(el.querySelector('target-number')?.getAttribute('value')).toBe(targetBefore);
+        expect(
+            Array.from(el.querySelectorAll('numbers-pool number-token')).map((t) => t.textContent)
+        ).toEqual(tokensBefore);
     });
 
     it('starts generation when hash mode changes to daily', () => {

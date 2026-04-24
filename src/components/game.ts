@@ -367,7 +367,7 @@ export class NumbersGameElement extends HTMLElement {
         this.startNewGameGeneration();
     };
 
-    private setDifficulty = (difficulty: GameDifficulty): void => {
+    private setDifficulty = (difficulty: GameDifficulty): boolean => {
         // When the difficulty attribute is present and valid, it is authoritative —
         // ignore selector attempts and re-render the authoritative value.
         const resolved = resolveDifficulty({
@@ -377,10 +377,10 @@ export class NumbersGameElement extends HTMLElement {
         if (resolved.source === 'attribute') {
             this.difficulty = resolved.difficulty;
             this.render();
-            return;
+            return false;
         }
 
-        if (this.difficulty === difficulty) return;
+        if (this.difficulty === difficulty) return false;
         this.difficulty = difficulty;
 
         const nextHash = serializeHash({
@@ -389,12 +389,13 @@ export class NumbersGameElement extends HTMLElement {
         });
         if (nextHash === window.location.hash) {
             this.render();
-            return;
+            return true;
         }
 
         const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
         window.history.replaceState(null, '', nextUrl);
         this.render();
+        return true;
     };
 
     private scoreEasySolution = (
@@ -785,8 +786,9 @@ export class NumbersGameElement extends HTMLElement {
         const nextDifficulty = target.value;
         if (nextDifficulty !== 'easy' && nextDifficulty !== 'normal') return;
         if (nextDifficulty === this.difficulty) return;
-        this.setDifficulty(nextDifficulty);
-        this.startNewGameGeneration();
+        if (this.setDifficulty(nextDifficulty)) {
+            this.startNewGameGeneration();
+        }
     };
 
     private onNumberSelected = (event: CustomEvent<NumberSelectedPayload>): void => {
