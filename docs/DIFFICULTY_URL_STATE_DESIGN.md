@@ -2,20 +2,23 @@
 
 ## Status
 
-Phase 1 is now implemented:
+Phase 1 is implemented, with daily mode extension:
 
 - `easy` difficulty is available in the UI.
 - `location.hash` supports `#difficulty=easy|normal` preselection.
+- `location.hash` also supports `#mode=daily|random` preselection.
 - Parsing and serialization live in `src/lib/url-state.ts` for future URL-sharing expansion.
 
 ## Goal
 
 Add an `easy` difficulty setting now, while designing URL handling so the same parsing/serialization layer can be reused for future full game-state sharing.
 
-## Scope (Phase 1)
+## Scope (Implemented)
 
 - Add one new difficulty: `easy`
 - Allow difficulty preselection from `location.hash`
+- Add deterministic daily-mode round generation keyed by UTC date and difficulty
+- Allow mode preselection from `location.hash`
 - Keep behavior deterministic and safe with strict parsing/validation
 - Preserve existing core game rules (integer-only, positive-only, token single-use by id, etc.)
 
@@ -45,18 +48,22 @@ This keeps resolution explicit and testable.
 
 This mirrors likely future behavior when we add shareable links while keeping embedding flexible.
 
-## URL Hash Schema (Phase 1)
+## URL Hash Schema
 
 Use key-value pairs in hash for extensibility:
 
 - `#difficulty=easy`
 - `#difficulty=normal`
+- `#mode=daily`
+- `#difficulty=easy&mode=daily`
 
 Parser behavior:
 
 - Unknown keys: ignored
 - Unknown difficulty: ignored (fallback to default/next source)
+- Unknown mode: ignored (fallback to `random`)
 - Case-insensitive read, normalized output (`easy` / `normal`)
+- Serialization omits `mode=random` as the default.
 
 ## Difficulty Banding (Implemented)
 
@@ -81,10 +88,10 @@ Diagnostics:
 This module exists and provides pure functions:
 
 - `parseHash(hash: string): Partial<UrlGameState>`
-- `serializeHash(state: UrlGameState): string`
+- `serializeHash(state: Partial<UrlGameState>): string`
 - `resolveDifficulty({ attributeValue, hash }): ResolvedRoundConfig`
 
-Phase 1 uses only `difficulty`, but the structure is designed to expand later to:
+Current use covers `difficulty` + `mode`, and the structure is designed to expand later to:
 
 - `numbers`
 - `target`
@@ -95,10 +102,11 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 
 - `src/components/game.ts`
     - Resolves difficulty at startup using attribute + hash via `resolveDifficulty`
-    - Re-resolves on `hashchange` using `source === 'attribute'` check — only defers to attribute when it resolves to a valid difficulty
+    - Re-resolves on `hashchange`; valid `difficulty` attribute still overrides hash difficulty, while hash mode changes still apply
     - Passes difficulty into new-game generation
     - Syncs selector changes back into hash using `history.replaceState`, skipping hash writes when `source === 'attribute'`
     - Selector-driven difficulty changes immediately trigger new-round generation in the selected mode
+    - Daily mode generation is deterministic via UTC date key + difficulty and can be entered via hash or `Daily puzzle` button
     - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
     - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`
@@ -113,13 +121,23 @@ Phase 1 uses only `difficulty`, but the structure is designed to expand later to
 
 - `src/lib/url-state.test.ts`
     - parse valid/invalid difficulty hash values
+    - parse valid/invalid mode hash values
+    - serialize omits `mode=random` and includes `mode=daily`
     - ignores unknown params safely
     - normalization and fallback behavior
+
+- `src/lib/daily.test.ts`
+    - date-key, seeding, and PRNG determinism
+    - deterministic round generation by date + difficulty
+    - pool-valid numbers and bounded target range
 
 ### Component integration
 
 - `src/components/game.test.ts`
     - hash preselects `easy`
+    - hash preselects daily mode and renders canonical date badge (`YYYY-MM-DD`)
+    - hash mode changes trigger regeneration
+    - valid `difficulty` attribute does not block hash mode updates
     - invalid hash falls back to default
     - new game respects selected difficulty
     - difficulty band helper validates `easy < 4` and `normal > 3` boundaries

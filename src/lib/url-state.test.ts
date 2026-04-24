@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseHash, resolveDifficulty, serializeHash } from './url-state.js';
+import { parseHash, serializeHash } from './url-state.js';
 
 describe('url-state', () => {
     it('parses difficulty from hash', () => {
@@ -22,20 +22,33 @@ describe('url-state', () => {
         expect(serializeHash({})).toBe('');
     });
 
-    it('resolves precedence: attribute > hash > default', () => {
-        expect(resolveDifficulty({ attributeValue: 'easy', hash: '#difficulty=normal' })).toEqual({
-            difficulty: 'easy',
-            source: 'attribute',
-        });
+    it('parses mode=daily from hash', () => {
+        expect(parseHash('#mode=daily')).toEqual({ mode: 'daily' });
+        expect(parseHash('#mode=random')).toEqual({ mode: 'random' });
+        expect(parseHash('#mode=unknown')).toEqual({});
+    });
 
-        expect(resolveDifficulty({ attributeValue: null, hash: '#difficulty=easy' })).toEqual({
+    it('parses both difficulty and mode together', () => {
+        expect(parseHash('#difficulty=easy&mode=daily')).toEqual({
             difficulty: 'easy',
-            source: 'hash',
+            mode: 'daily',
         });
+    });
 
-        expect(resolveDifficulty({ attributeValue: null, hash: '#difficulty=unknown' })).toEqual({
-            difficulty: 'normal',
-            source: 'default',
-        });
+    it('serializes mode=daily in hash', () => {
+        expect(serializeHash({ mode: 'daily' })).toBe('#mode=daily');
+        expect(serializeHash({ difficulty: 'easy', mode: 'daily' })).toBe(
+            '#difficulty=easy&mode=daily'
+        );
+    });
+
+    it('does not serialize mode=random (it is the default)', () => {
+        expect(serializeHash({ mode: 'random' })).toBe('');
+        expect(serializeHash({ difficulty: 'easy', mode: 'random' })).toBe('#difficulty=easy');
+    });
+
+    it('roundtrips daily mode through serialize → parse', () => {
+        const serialized = serializeHash({ difficulty: 'normal', mode: 'daily' });
+        expect(parseHash(serialized)).toEqual({ difficulty: 'normal', mode: 'daily' });
     });
 });

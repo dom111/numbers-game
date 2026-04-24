@@ -559,6 +559,25 @@ describe('NumbersGameElement', () => {
         expect(select.value).toBe('easy');
     });
 
+    it('preselects daily mode from hash and shows a locale-independent date badge', () => {
+        el.remove();
+        setHash('#difficulty=easy&mode=daily');
+
+        el = document.createElement('numbers-game') as NumbersGameElement;
+        document.body.appendChild(el);
+
+        const dailyBadge = el.querySelector('.daily-badge');
+        expect(dailyBadge?.textContent).toMatch(/^Daily — \d{4}-\d{2}-\d{2}$/);
+        expect(
+            (el.querySelector('button[data-action="daily"]') as HTMLButtonElement).disabled
+        ).toBe(true);
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe('easy');
+    });
+
     it('falls back to normal difficulty for invalid hash values', () => {
         el.remove();
         setHash('#difficulty=hard');
@@ -620,12 +639,9 @@ describe('NumbersGameElement', () => {
         const select = el.querySelector(
             '.difficulty-controls select[data-action="difficulty"]'
         ) as HTMLSelectElement;
-        const newGameButton = controls.querySelector(
-            'button[data-action="new"]'
-        ) as HTMLButtonElement;
 
         expect(controls.contains(select)).toBe(true);
-        expect(newGameButton.nextElementSibling).toBe(difficultyControls);
+        expect(controls.lastElementChild).toBe(difficultyControls);
         expect(controls.getAttribute('role')).toBe('group');
         expect(controls.getAttribute('aria-label')).toBe('Gameplay controls');
     });
@@ -659,6 +675,7 @@ describe('NumbersGameElement', () => {
         const resetButton = el.querySelector('button[data-action="reset"]') as HTMLButtonElement;
         const hintButton = el.querySelector('button[data-action="hint"]') as HTMLButtonElement;
         const newButton = el.querySelector('button[data-action="new"]') as HTMLButtonElement;
+        const dailyButton = el.querySelector('button[data-action="daily"]') as HTMLButtonElement;
         const difficultySelect = el.querySelector(
             '.difficulty-controls select[data-action="difficulty"]'
         ) as HTMLSelectElement;
@@ -675,6 +692,11 @@ describe('NumbersGameElement', () => {
         expect(document.activeElement).toBe(newButton);
 
         newButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        expect(document.activeElement).toBe(dailyButton);
+
+        dailyButton.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+        );
         expect(document.activeElement).toBe(difficultySelect);
 
         newButton.focus();
@@ -745,6 +767,53 @@ describe('NumbersGameElement', () => {
             '.difficulty-controls select[data-action="difficulty"]'
         ) as HTMLSelectElement;
         expect(select.value).toBe('easy');
+    });
+
+    it('starts generation when hash mode changes to daily', () => {
+        vi.useFakeTimers();
+
+        try {
+            setHash('#mode=daily');
+            window.dispatchEvent(new Event('hashchange'));
+
+            expect(el.querySelector('.loading-message')?.textContent).toBe(
+                'Generating new game...'
+            );
+
+            vi.runAllTimers();
+
+            const dailyButton = el.querySelector(
+                'button[data-action="daily"]'
+            ) as HTMLButtonElement;
+            expect(dailyButton.getAttribute('aria-pressed')).toBe('true');
+            expect(dailyButton.disabled).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('applies hash mode changes even when difficulty attribute is authoritative', () => {
+        vi.useFakeTimers();
+
+        try {
+            el.setAttribute('difficulty', 'easy');
+
+            setHash('#difficulty=normal&mode=daily');
+            window.dispatchEvent(new Event('hashchange'));
+            vi.runAllTimers();
+
+            const select = el.querySelector(
+                '.difficulty-controls select[data-action="difficulty"]'
+            ) as HTMLSelectElement;
+            expect(select.value).toBe('easy');
+
+            const dailyButton = el.querySelector(
+                'button[data-action="daily"]'
+            ) as HTMLButtonElement;
+            expect(dailyButton.getAttribute('aria-pressed')).toBe('true');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

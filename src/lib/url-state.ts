@@ -1,4 +1,4 @@
-import type { GameDifficulty, ResolvedRoundConfig, UrlGameState } from '../types.js';
+import type { GameDifficulty, GameMode, ResolvedRoundConfig, UrlGameState } from '../types.js';
 
 const DEFAULT_DIFFICULTY: GameDifficulty = 'normal';
 
@@ -8,23 +8,32 @@ const toDifficulty = (value: string | null | undefined): GameDifficulty | null =
     return normalized === 'easy' || normalized === 'normal' ? normalized : null;
 };
 
-/** Parse hash params into URL game-state fields (phase 1: difficulty only). */
+const toMode = (value: string | null | undefined): GameMode | null => {
+    if (!value) return null;
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'daily' || normalized === 'random' ? normalized : null;
+};
+
+/** Parse hash params into URL game-state fields. */
 export const parseHash = (hash: string): Partial<UrlGameState> => {
     const raw = hash.startsWith('#') ? hash.slice(1) : hash;
     if (!raw) return {};
 
     const params = new URLSearchParams(raw);
     let difficultyValue: string | null = null;
+    let modeValue: string | null = null;
     for (const [key, value] of params.entries()) {
-        if (key.trim().toLowerCase() === 'difficulty') {
-            difficultyValue = value;
-            break;
-        }
+        const k = key.trim().toLowerCase();
+        if (k === 'difficulty') difficultyValue = value;
+        if (k === 'mode') modeValue = value;
     }
     const difficulty = toDifficulty(difficultyValue);
+    const mode = toMode(modeValue);
 
-    if (!difficulty) return {};
-    return { difficulty };
+    const result: Partial<UrlGameState> = {};
+    if (difficulty) result.difficulty = difficulty;
+    if (mode) result.mode = mode;
+    return result;
 };
 
 /** Serialize URL game state back to a hash string. */
@@ -32,6 +41,9 @@ export const serializeHash = (state: Partial<UrlGameState>): string => {
     const params = new URLSearchParams();
     if (state.difficulty) {
         params.set('difficulty', state.difficulty);
+    }
+    if (state.mode && state.mode !== 'random') {
+        params.set('mode', state.mode);
     }
 
     const serialized = params.toString();

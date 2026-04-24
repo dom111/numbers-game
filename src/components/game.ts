@@ -56,9 +56,12 @@ import './steps.js';
 import './target.js';
 import { findSolution } from '../lib/solver.js';
 import { getHint, HintLevel } from '../lib/hint-engine.js';
-import { resolveDifficulty, serializeHash } from '../lib/url-state.js';
+import { resolveDifficulty, serializeHash, parseHash } from '../lib/url-state.js';
+import { isInDifficultyBand, EASY_MAX_STEPS, NORMAL_MIN_STEPS } from '../lib/difficulty.js';
+import { generateDailyRound, getDailyDateKey } from '../lib/daily.js';
 import type {
     GameDifficulty,
+    GameMode,
     GameNewPayload,
     GameWonPayload,
     NumberSelectedPayload,
@@ -68,10 +71,11 @@ import type {
     StepsChangedPayload,
 } from '../types.js';
 
-const EASY_MAX_STEPS = 3;
-const NORMAL_MIN_STEPS = 4;
 const ROUND_NUMBER_ATTEMPTS = 20;
 const ROUND_TARGET_ATTEMPTS = 20;
+
+// Re-export for backward compatibility with tests and external consumers.
+export { isInDifficultyBand };
 
 type RoundGenerationMetrics = {
     difficulty: GameDifficulty;
@@ -79,14 +83,6 @@ type RoundGenerationMetrics = {
     solvablePairs: number;
     elapsedMs: number;
     bestCandidateStepCount: number | null;
-};
-
-/** Difficulty acceptance bands are based on shortest solution length. */
-export const isInDifficultyBand = (difficulty: GameDifficulty, stepCount: number): boolean => {
-    if (difficulty === 'easy') {
-        return stepCount <= EASY_MAX_STEPS; // easy < 4
-    }
-    return stepCount >= NORMAL_MIN_STEPS; // normal > 3
 };
 
 type StepTokenRemovePayload = {
@@ -153,6 +149,13 @@ export class NumbersGameElement extends HTMLElement {
     private baseNumbers: number[] = [];
 
     private difficulty: GameDifficulty = 'normal';
+
+    private mode: GameMode = 'random';
+
+    private dailyDateKey: string = getDailyDateKey();
+
+    /** In-memory cache: key = `dateKey:difficulty` → round. Bounded to avoid memory growth. */
+    private dailyCache: Map<string, { numbers: number[]; target: number }> = new Map();
 
     private tokens: NumberToken[] = [];
 
@@ -225,26 +228,61 @@ export class NumbersGameElement extends HTMLElement {
             attributeValue: this.getAttribute('difficulty'),
             hash: window.location.hash,
         });
+        const hashState = parseHash(window.location.hash);
         const parsedTarget = parseTargetAttribute(this.getAttribute('target'));
         const parsedNumbers = parseNumbersAttribute(this.getAttribute('numbers'));
 
         this.difficulty = resolvedConfig.difficulty;
-        this.target = parsedTarget ?? generateTarget();
-        this.baseNumbers = parsedNumbers ?? generateNumbers();
+        this.mode = hashState.mode ?? 'random';
+
+        if (this.mode === 'daily') {
+            this.dailyDateKey = getDailyDateKey();
+            const round = this.getOrGenerateDailyRound(this.difficulty);
+            this.baseNumbers = round.numbers;
+            this.target = round.target;
+        } else {
+            this.target = parsedTarget ?? generateTarget();
+            this.baseNumbers = parsedNumbers ?? generateNumbers();
+        }
         this.resetRoundState();
     }
 
+    private getOrGenerateDailyRound(difficulty: GameDifficulty): {
+        numbers: number[];
+        target: number;
+    } {
+        const cacheKey = `${this.dailyDateKey}:${difficulty}`;
+        if (this.dailyCache.has(cacheKey)) {
+            return this.dailyCache.get(cacheKey)!;
+        }
+        const round = generateDailyRound(difficulty, this.dailyDateKey);
+        // Bound cache to avoid unbounded growth across difficulty switches.
+        if (this.dailyCache.size >= 10) {
+            const firstKey = this.dailyCache.keys().next().value;
+            if (firstKey !== undefined) this.dailyCache.delete(firstKey);
+        }
+        this.dailyCache.set(cacheKey, { numbers: round.numbers, target: round.target });
+        return round;
+    }
+
     private onHashChange = (): void => {
-        // Only defer to the attribute when it resolves to a valid difficulty.
+        // Difficulty may be attribute-controlled, but hash mode changes should still apply.
         const resolved = resolveDifficulty({
             attributeValue: this.getAttribute('difficulty'),
             hash: window.location.hash,
         });
-        if (resolved.source === 'attribute') return;
 
-        if (resolved.difficulty === this.difficulty) return;
-        this.difficulty = resolved.difficulty;
-        this.render();
+        const hashState = parseHash(window.location.hash);
+        const newMode = hashState.mode ?? 'random';
+        const nextDifficulty =
+            resolved.source === 'attribute' ? this.difficulty : resolved.difficulty;
+        const difficultyChanged = nextDifficulty !== this.difficulty;
+        const modeChanged = newMode !== this.mode;
+
+        if (!difficultyChanged && !modeChanged) return;
+        this.difficulty = nextDifficulty;
+        this.mode = newMode;
+        this.startNewGameGeneration();
     };
 
     private setDifficulty = (difficulty: GameDifficulty): void => {
@@ -262,7 +300,10 @@ export class NumbersGameElement extends HTMLElement {
             return;
         }
 
-        const nextHash = serializeHash({ difficulty });
+        const nextHash = serializeHash({
+            difficulty,
+            mode: this.mode === 'daily' ? 'daily' : undefined,
+        });
         if (nextHash === window.location.hash) {
             this.render();
             return;
@@ -329,7 +370,13 @@ export class NumbersGameElement extends HTMLElement {
             this.generationTimeout = null;
             if (!this.isConnected) return;
 
-            const nextRound = this.generateSolvableRound(this.difficulty);
+            let nextRound: { numbers: number[]; target: number };
+            if (this.mode === 'daily') {
+                this.dailyDateKey = getDailyDateKey();
+                nextRound = this.getOrGenerateDailyRound(this.difficulty);
+            } else {
+                nextRound = this.generateSolvableRound(this.difficulty);
+            }
             this.baseNumbers = nextRound.numbers;
             this.target = nextRound.target;
             this.resetRoundState();
@@ -602,6 +649,25 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'new') {
+            // Clicking "New game" always starts a random game, exiting daily mode.
+            if (this.mode === 'daily') {
+                this.mode = 'random';
+                const nextHash = serializeHash({ difficulty: this.difficulty });
+                const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+                window.history.replaceState(null, '', nextUrl);
+            }
+            this.startNewGameGeneration();
+            return;
+        }
+
+        if (action === 'daily') {
+            if (this.mode === 'daily') return;
+            this.mode = 'daily';
+            this.dailyDateKey = getDailyDateKey();
+            // Update URL hash to reflect daily mode.
+            const nextHash = serializeHash({ difficulty: this.difficulty, mode: 'daily' });
+            const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+            window.history.replaceState(null, '', nextUrl);
             this.startNewGameGeneration();
             return;
         }
@@ -848,6 +914,17 @@ export class NumbersGameElement extends HTMLElement {
             targetSection.append(difficultyBadge);
         }
 
+        // Show daily puzzle badge when in daily mode
+        if (this.mode === 'daily') {
+            const dailyBadge = document.createElement('div');
+            dailyBadge.className = 'daily-badge';
+            // Keep the label locale-independent so all players see the same canonical date key.
+            const dateLabel = this.dailyDateKey;
+            dailyBadge.textContent = `Daily — ${dateLabel}`;
+            dailyBadge.setAttribute('aria-label', `Daily puzzle for ${dateLabel}`);
+            targetSection.append(dailyBadge);
+        }
+
         const difficultyControls = document.createElement('div');
         difficultyControls.className = 'difficulty-controls';
 
@@ -925,7 +1002,17 @@ export class NumbersGameElement extends HTMLElement {
 
         difficultySelect.disabled = this.isGenerating;
 
-        controls.append(resetButton, hintButton, newGameButton, difficultyControls);
+        const dailyButton = document.createElement('button');
+        dailyButton.type = 'button';
+        dailyButton.dataset.action = 'daily';
+        dailyButton.textContent = 'Daily puzzle';
+        dailyButton.setAttribute('aria-label', "Play today's daily puzzle");
+        dailyButton.disabled = this.isGenerating || this.mode === 'daily';
+        if (this.mode === 'daily') {
+            dailyButton.setAttribute('aria-pressed', 'true');
+        }
+
+        controls.append(resetButton, hintButton, newGameButton, dailyButton, difficultyControls);
 
         wrapper.append(targetSection, pool, operatorsSection, steps, controls);
 
