@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateNumbers, isInDifficultyBand, NumbersGameElement } from './game.js';
+import {
+    clearAllDailyStats,
+    isDailyPuzzleCompleted,
+    getDailyPuzzleStats,
+} from '../lib/daily-stats.js';
 
 if (!customElements.get('numbers-game')) {
     customElements.define('numbers-game', NumbersGameElement);
@@ -46,6 +51,7 @@ describe('NumbersGameElement', () => {
     afterEach(() => {
         el.remove();
         setHash('');
+        clearAllDailyStats();
     });
 
     it('initializes target and six tokens from attributes', () => {
@@ -180,6 +186,122 @@ describe('NumbersGameElement', () => {
                 writable: true,
             });
         }
+    });
+
+    it('records daily puzzle win stats when a daily game is won', () => {
+        try {
+            vi.useFakeTimers();
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            vi.runAllTimersAsync();
+
+            // The element initializes asynchronously; wait for it
+            expect(el.querySelector('target-number')).not.toBeNull();
+            const targetValue = Number(el.querySelector('target-number')?.getAttribute('value'));
+
+            // Simulate a win by setting steps that match the target
+            const stepsList = el.querySelector('steps-list') as HTMLElement;
+            stepsList.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [
+                            { id: 'step-1', left: 1, operator: '+', right: 2, value: targetValue },
+                        ],
+                    },
+                })
+            );
+
+            // Verify stats were recorded
+            const dateKey = new Date().toISOString().slice(0, 10);
+            const stats = getDailyPuzzleStats(dateKey, 'easy');
+            expect(stats).not.toBeNull();
+            expect(stats?.completed).toBe(true);
+            expect(stats?.moveCount).toBe(1);
+            expect(stats?.completedAt).toBeTruthy();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('tracks easy and normal daily puzzles independently', () => {
+        const dateKey = new Date().toISOString().slice(0, 10);
+
+        try {
+            vi.useFakeTimers();
+
+            // Complete easy daily puzzle
+            setHash(`#difficulty=easy&mode=daily`);
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            vi.runAllTimersAsync();
+
+            const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
+            const stepsList = el.querySelector('steps-list') as HTMLElement;
+            stepsList.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [
+                            { id: 'step-1', left: 1, operator: '+', right: 2, value: easyTarget },
+                        ],
+                    },
+                })
+            );
+
+            expect(isDailyPuzzleCompleted(dateKey, 'easy')).toBe(true);
+            expect(isDailyPuzzleCompleted(dateKey, 'normal')).toBe(false);
+
+            // Complete normal daily puzzle
+            el.remove();
+            setHash(`#difficulty=normal&mode=daily`);
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            vi.runAllTimersAsync();
+
+            const normalTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
+            const stepsListNormal = el.querySelector('steps-list') as HTMLElement;
+            stepsListNormal.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [
+                            { id: 'step-1', left: 1, operator: '+', right: 2, value: 3 },
+                            { id: 'step-2', left: 3, operator: '+', right: 4, value: normalTarget },
+                        ],
+                    },
+                })
+            );
+
+            // Both should now be completed but with different move counts
+            const easyStats = getDailyPuzzleStats(dateKey, 'easy');
+            const normalStats = getDailyPuzzleStats(dateKey, 'normal');
+            expect(easyStats?.moveCount).toBe(1);
+            expect(normalStats?.moveCount).toBe(2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not record stats for random game wins (only daily)', () => {
+        el.setAttribute('target', '250');
+        el.setAttribute('numbers', '1,5,7,9,50,75');
+        const dateKey = new Date().toISOString().slice(0, 10);
+
+        const stepsList = el.querySelector('steps-list') as HTMLElement;
+        stepsList.dispatchEvent(
+            new CustomEvent('steps-changed', {
+                bubbles: true,
+                detail: {
+                    steps: [{ id: 'step-1', left: 5, operator: '×', right: 50, value: 250 }],
+                },
+            })
+        );
+
+        // Stats should not be recorded for random mode
+        expect(isDailyPuzzleCompleted(dateKey, 'easy')).toBe(false);
+        expect(isDailyPuzzleCompleted(dateKey, 'normal')).toBe(false);
     });
 
     it('emits game-reset and restores round state with same target/numbers', () => {

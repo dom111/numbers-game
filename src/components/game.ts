@@ -59,6 +59,7 @@ import { getHint, HintLevel } from '../lib/hint-engine.js';
 import { resolveDifficulty, serializeHash, parseHash } from '../lib/url-state.js';
 import { isInDifficultyBand, EASY_MAX_STEPS, NORMAL_MIN_STEPS } from '../lib/difficulty.js';
 import { generateDailyRound, getDailyDateKey } from '../lib/daily.js';
+import { recordDailyPuzzleWin } from '../lib/daily-stats.js';
 import type {
     GameDifficulty,
     GameMode,
@@ -767,6 +768,11 @@ export class NumbersGameElement extends HTMLElement {
         const becameLocked = Boolean(latest && latest.value === this.target);
         this.locked = becameLocked;
         if (this.locked && latest) {
+            // Record win for daily puzzles
+            if (this.mode === 'daily') {
+                recordDailyPuzzleWin(this.dailyDateKey, this.difficulty, this.steps.length);
+            }
+
             const detail: GameWonPayload = { target: this.target, steps: [...this.steps] };
             this.dispatchEvent(
                 new CustomEvent<GameWonPayload>('game-won', { bubbles: true, detail })

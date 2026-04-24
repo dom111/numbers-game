@@ -43,6 +43,22 @@
     - [ ] Extend hash state to include numbers + target for round links
     - [ ] Extend hash state to include steps/hint state for full in-progress sharing
 - [x] Using the date as a seed for daily challenges
+- [ ] **Daily challenge enhancements**
+    - [ ] **Stats tracking** — Store completion status and move counts for daily puzzles
+        - [ ] localStorage persistence of daily puzzle attempts (date, difficulty, completed, move count)
+        - [ ] Track completion status across easy/normal daily variants
+    - [ ] **Star rating system** — Award stars based on move efficiency vs. shortest path
+        - [ ] Calculate move ratio: player moves vs. shortest solution length
+        - [ ] Award scoring: 3 stars (best path), 2 stars (+ 1-2 moves), 1 star (+ 3+ moves), 0 stars (incomplete)
+        - [ ] Display star count on daily puzzle win screen
+    - [ ] **Timed mode for daily** — Optional timer variant of daily challenges
+        - [ ] Add mode toggle for `timed` variant alongside `daily` mode
+        - [ ] Countdown timer display during play (e.g., 10 minutes)
+        - [ ] Allow completion with/without time limit, score differently
+    - [ ] **Share link on win** — Generate shareable URL with puzzle date, difficulty, and result
+        - [ ] Include star count and shortest path in share text
+        - [ ] Format: `Daily numbers game <date>: ⭐⭐⭐ / <shortest-path-length>\n<url-with-hash>`
+        - [ ] Copy-to-clipboard UI for easy sharing
 - [ ] Time tracking (optionally, so as not to pressure younger players)
 
 ### Game Logic Enhancements
