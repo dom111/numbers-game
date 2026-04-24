@@ -384,6 +384,69 @@ describe('NumbersGameElement', () => {
         }
     });
 
+    it('restores correct daily puzzle state when changing difficulty selector', () => {
+        try {
+            vi.useFakeTimers();
+            const dateKey = new Date().toISOString().slice(0, 10);
+
+            // Load Easy mode and complete it
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            vi.runAllTimersAsync();
+
+            const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
+            const easyStep = {
+                id: 'step-1',
+                left: 1,
+                operator: '+' as const,
+                right: 2,
+                value: easyTarget,
+            };
+            const stepsList = el.querySelector('steps-list') as HTMLElement;
+            stepsList.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: [easyStep] },
+                })
+            );
+
+            expect(getDailyPuzzleStats(dateKey, 'easy')?.completed).toBe(true);
+
+            // Verify easy is celebrated
+            let target = el.querySelector('target-number');
+            let initialCelebrating = target?.hasAttribute('celebrating');
+            expect(initialCelebrating).toBe(true);
+
+            // Simulate clearing by resetting the game
+            const resetButton = el.querySelector(
+                'button[data-action="reset"]'
+            ) as HTMLButtonElement;
+            resetButton.click();
+            vi.runAllTimersAsync();
+
+            // After reset, should not be celebrating
+            target = el.querySelector('target-number');
+            expect(target?.hasAttribute('celebrating')).toBe(false);
+
+            // Reload page with same daily puzzle (simulate page refresh)
+            el.remove();
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            vi.runAllTimersAsync();
+
+            // Should restore and show celebration again
+            target = el.querySelector('target-number');
+            expect(target?.hasAttribute('celebrating')).toBe(true);
+
+            const topStatus = document.body.querySelector('.game-top-status');
+            expect(topStatus?.textContent).toBe('You won! Start a new game to play again.');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('emits game-reset and restores round state with same target/numbers', () => {
         el.setAttribute('target', '999');
         el.setAttribute('numbers', '1,5,7,9,50,75');
