@@ -26,6 +26,10 @@
     - [x] Selected-number highlighting in the available numbers pool
     - [x] Easy-mode difficulty badge shown beside the target (hidden for normal mode)
     - [x] Celebration animation on win (burst + target grow/gradient effect)
+- [x] **CSS maintenance tooling** — Add automated unused-selector detection
+    - [x] Scanner script (`scripts/css-unused-scan.mjs`)
+    - [x] `npm run css:unused` command
+    - [x] Non-blocking CI step for unused-selector drift detection
 
 ## Medium Priority
 
@@ -79,8 +83,6 @@
 - [ ] **Dark mode** — Optional theme toggle
 - [ ] **Sound effects** — Subtle audio feedback (optional, minimal)
 - [ ] **Multiplayer mode** — Future consideration for competitive play
-- [x] Celebration animations on win (confetti, etc.) — keep light and non-distracting for younger players
-    - [x] Reduced-motion-safe sparkle/burst on win
 
 ## Notes
 
@@ -88,5 +90,6 @@
 - **Difficulty bands** are enforced by shortest-path length: `easy < 4` steps, `normal > 3` steps
 - **URL hash state** is live for difficulty preselection; the parser/serializer layer is ready for future full game-state sharing
 - **Hint system** now reuses the solver directly; future work should focus on responsiveness and UI polish
+- **CSS maintenance tooling** now in place: `npm run css:unused` flags likely unused selectors; non-blocking CI step integrated
 - **Mobile responsiveness and baseline keyboard/a11y support** are now in place; next UX focus is visual feedback and onboarding/help
 - Prioritize items that directly improve player experience and reduce frustration
