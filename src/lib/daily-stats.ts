@@ -45,7 +45,13 @@ export const getDailyPuzzleStats = (
     difficulty: GameDifficulty
 ): DailyPuzzleStats | null => {
     const key = getStatsKey(dateKey, difficulty);
-    const stored = localStorage.getItem(key);
+    let stored: string | null = null;
+    try {
+        stored = localStorage.getItem(key);
+    } catch {
+        console.warn(`[numbers-game] Failed to read daily stats for ${key}`);
+        return null;
+    }
     if (!stored) return null;
 
     try {
@@ -77,7 +83,11 @@ export const recordDailyPuzzleWin = (
         completedAt: new Date().toISOString(),
         steps,
     };
-    localStorage.setItem(key, JSON.stringify(stats));
+    try {
+        localStorage.setItem(key, JSON.stringify(stats));
+    } catch {
+        console.warn(`[numbers-game] Failed to persist daily stats for ${key}`);
+    }
 };
 
 /**
@@ -94,7 +104,12 @@ export const isDailyPuzzleCompleted = (dateKey: string, difficulty: GameDifficul
 
 /** Removes one daily puzzle stats record. */
 export const clearDailyPuzzleStats = (dateKey: string, difficulty: GameDifficulty): void => {
-    localStorage.removeItem(getStatsKey(dateKey, difficulty));
+    const key = getStatsKey(dateKey, difficulty);
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        console.warn(`[numbers-game] Failed to clear daily stats for ${key}`);
+    }
 };
 
 /**
@@ -103,11 +118,22 @@ export const clearDailyPuzzleStats = (dateKey: string, difficulty: GameDifficult
  */
 export const clearAllDailyStats = (): void => {
     const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('numbers-game:daily-stats:')) {
-            keys.push(key);
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('numbers-game:daily-stats:')) {
+                keys.push(key);
+            }
         }
+    } catch {
+        console.warn('[numbers-game] Failed to enumerate daily stats keys');
+        return;
     }
-    keys.forEach((key) => localStorage.removeItem(key));
+    keys.forEach((key) => {
+        try {
+            localStorage.removeItem(key);
+        } catch {
+            console.warn(`[numbers-game] Failed to remove daily stats key ${key}`);
+        }
+    });
 };

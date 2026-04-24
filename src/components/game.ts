@@ -357,8 +357,7 @@ export class NumbersGameElement extends HTMLElement {
 
         const hashState = parseHash(window.location.hash);
         const newMode = hashState.mode ?? 'random';
-        const nextDifficulty =
-            resolved.source === 'attribute' ? this.difficulty : resolved.difficulty;
+        const nextDifficulty = resolved.difficulty;
         const difficultyChanged = nextDifficulty !== this.difficulty;
         const modeChanged = newMode !== this.mode;
 
@@ -369,19 +368,20 @@ export class NumbersGameElement extends HTMLElement {
     };
 
     private setDifficulty = (difficulty: GameDifficulty): void => {
-        if (this.difficulty === difficulty) return;
-        this.difficulty = difficulty;
-
         // When the difficulty attribute is present and valid, it is authoritative —
-        // do not write to the URL hash, just re-render to reflect the new value.
+        // ignore selector attempts and re-render the authoritative value.
         const resolved = resolveDifficulty({
             attributeValue: this.getAttribute('difficulty'),
             hash: window.location.hash,
         });
         if (resolved.source === 'attribute') {
+            this.difficulty = resolved.difficulty;
             this.render();
             return;
         }
+
+        if (this.difficulty === difficulty) return;
+        this.difficulty = difficulty;
 
         const nextHash = serializeHash({
             difficulty,

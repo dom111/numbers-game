@@ -1045,6 +1045,22 @@ describe('NumbersGameElement', () => {
         expect(select.value).toBe('easy');
     });
 
+    it('ignores selector difficulty changes when a valid difficulty attribute is authoritative', () => {
+        el.setAttribute('difficulty', 'easy');
+
+        const select = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+
+        select.value = 'normal';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+
+        const updatedSelect = el.querySelector(
+            '.difficulty-controls select[data-action="difficulty"]'
+        ) as HTMLSelectElement;
+        expect(updatedSelect.value).toBe('easy');
+    });
+
     it('starts generation when hash mode changes to daily', () => {
         vi.useFakeTimers();
 

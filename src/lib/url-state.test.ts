@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseHash, serializeHash } from './url-state.js';
+import { parseHash, resolveDifficulty, serializeHash } from './url-state.js';
 
 describe('url-state', () => {
     it('parses difficulty from hash', () => {
@@ -50,5 +50,29 @@ describe('url-state', () => {
     it('roundtrips daily mode through serialize → parse', () => {
         const serialized = serializeHash({ difficulty: 'normal', mode: 'daily' });
         expect(parseHash(serialized)).toEqual({ difficulty: 'normal', mode: 'daily' });
+    });
+
+    it('resolveDifficulty honors precedence: attribute > hash > default', () => {
+        expect(resolveDifficulty({ attributeValue: 'easy', hash: '#difficulty=normal' })).toEqual({
+            difficulty: 'easy',
+            source: 'attribute',
+        });
+
+        expect(resolveDifficulty({ attributeValue: null, hash: '#difficulty=easy' })).toEqual({
+            difficulty: 'easy',
+            source: 'hash',
+        });
+
+        expect(resolveDifficulty({ attributeValue: null, hash: '' })).toEqual({
+            difficulty: 'normal',
+            source: 'default',
+        });
+    });
+
+    it('resolveDifficulty ignores invalid attribute and allows hash fallback', () => {
+        expect(resolveDifficulty({ attributeValue: 'hard', hash: '#difficulty=easy' })).toEqual({
+            difficulty: 'easy',
+            source: 'hash',
+        });
     });
 });
