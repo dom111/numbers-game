@@ -26,6 +26,19 @@ describe('daily-stats', () => {
             expect(stats).toBeNull();
         });
 
+        it('returns null and does not throw when storage read fails', () => {
+            const getSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new Error('blocked');
+            });
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            expect(() => getDailyPuzzleStats('2026-04-24', 'easy')).not.toThrow();
+            expect(getDailyPuzzleStats('2026-04-24', 'easy')).toBeNull();
+
+            getSpy.mockRestore();
+            warnSpy.mockRestore();
+        });
+
         it('returns stored stats after a puzzle is completed', () => {
             const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
             recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps);
@@ -148,20 +161,7 @@ describe('daily-stats', () => {
         });
     });
 
-    describe('clearAllDailyStats', () => {
-        it('returns null and does not throw when storage read fails', () => {
-            const getSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-                throw new Error('blocked');
-            });
-            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-            expect(() => getDailyPuzzleStats('2026-04-24', 'easy')).not.toThrow();
-            expect(getDailyPuzzleStats('2026-04-24', 'easy')).toBeNull();
-
-            getSpy.mockRestore();
-            warnSpy.mockRestore();
-        });
-
+    describe('clearDailyPuzzleStats', () => {
         it('removes only the specified daily stats entry', () => {
             const easySteps = [
                 { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
@@ -177,7 +177,9 @@ describe('daily-stats', () => {
             expect(isDailyPuzzleCompleted('2026-04-24', 'easy')).toBe(false);
             expect(isDailyPuzzleCompleted('2026-04-24', 'normal')).toBe(true);
         });
+    });
 
+    describe('clearAllDailyStats', () => {
         it('removes all daily stats from localStorage', () => {
             const easySteps = [
                 { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
