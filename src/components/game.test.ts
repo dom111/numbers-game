@@ -188,13 +188,14 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('records daily puzzle win stats when a daily game is won', () => {
+    it('records daily puzzle win stats when a daily game is won', async () => {
         try {
             vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
             setHash('#difficulty=easy&mode=daily');
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             // The element initializes asynchronously; wait for it
             expect(el.querySelector('target-number')).not.toBeNull();
@@ -219,7 +220,7 @@ describe('NumbersGameElement', () => {
             );
 
             // Verify stats were recorded with steps
-            const dateKey = new Date().toISOString().slice(0, 10);
+            const dateKey = '2026-04-24';
             const stats = getDailyPuzzleStats(dateKey, 'easy');
             expect(stats).not.toBeNull();
             expect(stats?.completed).toBe(true);
@@ -231,17 +232,18 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('tracks easy and normal daily puzzles independently', () => {
-        const dateKey = new Date().toISOString().slice(0, 10);
+    it('tracks easy and normal daily puzzles independently', async () => {
+        const dateKey = '2026-04-24';
 
         try {
             vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
 
             // Complete easy daily puzzle
             setHash(`#difficulty=easy&mode=daily`);
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
             const easyStep = {
@@ -269,7 +271,7 @@ describe('NumbersGameElement', () => {
             setHash(`#difficulty=normal&mode=daily`);
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             const normalTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
             const normalStep1 = {
@@ -330,16 +332,17 @@ describe('NumbersGameElement', () => {
         expect(isDailyPuzzleCompleted(dateKey, 'normal')).toBe(false);
     });
 
-    it('restores completed daily puzzle with steps and celebration when reloading', () => {
+    it('restores completed daily puzzle with steps and celebration when reloading', async () => {
         try {
             vi.useFakeTimers();
-            const dateKey = new Date().toISOString().slice(0, 10);
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            const dateKey = '2026-04-24';
 
             // First load: Complete a daily puzzle
             setHash('#difficulty=easy&mode=daily');
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             const targetValue = Number(el.querySelector('target-number')?.getAttribute('value'));
             const completedStep = {
@@ -366,7 +369,7 @@ describe('NumbersGameElement', () => {
             setHash('#difficulty=easy&mode=daily');
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             // Game should be locked with celebration visible
             const target = el.querySelector('target-number');
@@ -384,16 +387,17 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('restores correct daily puzzle state when changing difficulty selector', () => {
+    it('restores correct daily puzzle state when changing difficulty selector', async () => {
         try {
             vi.useFakeTimers();
-            const dateKey = new Date().toISOString().slice(0, 10);
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            const dateKey = '2026-04-24';
 
             // Load Easy mode and complete it
             setHash('#difficulty=easy&mode=daily');
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
             const easyStep = {
@@ -423,7 +427,7 @@ describe('NumbersGameElement', () => {
                 'button[data-action="reset"]'
             ) as HTMLButtonElement;
             resetButton.click();
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             // After reset, should not be celebrating
             target = el.querySelector('target-number');
@@ -434,7 +438,7 @@ describe('NumbersGameElement', () => {
             setHash('#difficulty=easy&mode=daily');
             el = document.createElement('numbers-game') as NumbersGameElement;
             document.body.appendChild(el);
-            vi.runAllTimersAsync();
+            await vi.runAllTimersAsync();
 
             // Should restore and show celebration again
             target = el.querySelector('target-number');

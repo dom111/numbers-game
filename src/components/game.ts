@@ -238,19 +238,19 @@ export class NumbersGameElement extends HTMLElement {
 
         if (this.mode === 'daily') {
             this.dailyDateKey = getDailyDateKey();
-            const round = this.getOrGenerateDailyRound(this.difficulty);
-            this.baseNumbers = round.numbers;
-            this.target = round.target;
-        } else {
-            this.target = parsedTarget ?? generateTarget();
-            this.baseNumbers = parsedNumbers ?? generateNumbers();
+            // Keep initial render responsive: defer solver-backed daily generation.
+            this.target = parsedTarget ?? (this.target >= 1 ? this.target : generateTarget());
+            this.baseNumbers =
+                parsedNumbers ??
+                (this.baseNumbers.length === 6 ? this.baseNumbers : generateNumbers());
+            this.resetRoundState();
+            this.startNewGameGeneration();
+            return;
         }
-        this.resetRoundState();
 
-        // Check if this daily puzzle was previously completed
-        if (this.mode === 'daily') {
-            this.restorePreviousDailyCompletion();
-        }
+        this.target = parsedTarget ?? generateTarget();
+        this.baseNumbers = parsedNumbers ?? generateNumbers();
+        this.resetRoundState();
     }
 
     private getOrGenerateDailyRound(difficulty: GameDifficulty): {
