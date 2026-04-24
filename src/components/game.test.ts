@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateNumbers, isInDifficultyBand, NumbersGameElement } from './game.js';
+import { findSolution } from '../lib/solver.js';
 import {
     clearAllDailyStats,
     isDailyPuzzleCompleted,
@@ -40,6 +41,22 @@ describe('NumbersGameElement', () => {
                 el.querySelector('operator-buttons button[data-operator="×"]') as HTMLButtonElement
             ).click();
         }
+    };
+
+    const getSolvedStepsForRenderedRound = (): Array<{
+        id: string;
+        left: number;
+        operator: '+' | '-' | '×' | '÷';
+        right: number;
+        value: number;
+    }> => {
+        const numbers = Array.from(el.querySelectorAll('numbers-pool number-token'))
+            .map((token) => Number(token.textContent?.trim() ?? 'NaN'))
+            .filter((value) => Number.isInteger(value) && value >= 1);
+        const target = Number(el.querySelector('target-number')?.getAttribute('value'));
+        const solution = findSolution(numbers, target);
+        expect(solution.found).toBe(true);
+        return solution.steps;
     };
 
     beforeEach(() => {
@@ -199,22 +216,15 @@ describe('NumbersGameElement', () => {
 
             // The element initializes asynchronously; wait for it
             expect(el.querySelector('target-number')).not.toBeNull();
-            const targetValue = Number(el.querySelector('target-number')?.getAttribute('value'));
+            const solvedSteps = getSolvedStepsForRenderedRound();
 
-            // Simulate a win by setting steps that match the target
+            // Simulate a win by applying a valid solved path.
             const stepsList = el.querySelector('steps-list') as HTMLElement;
-            const winStep = {
-                id: 'step-1',
-                left: 1,
-                operator: '+' as const,
-                right: 2,
-                value: targetValue,
-            };
             stepsList.dispatchEvent(
                 new CustomEvent('steps-changed', {
                     bubbles: true,
                     detail: {
-                        steps: [winStep],
+                        steps: solvedSteps,
                     },
                 })
             );
@@ -224,9 +234,9 @@ describe('NumbersGameElement', () => {
             const stats = getDailyPuzzleStats(dateKey, 'easy');
             expect(stats).not.toBeNull();
             expect(stats?.completed).toBe(true);
-            expect(stats?.moveCount).toBe(1);
+            expect(stats?.moveCount).toBe(solvedSteps.length);
             expect(stats?.completedAt).toBeTruthy();
-            expect(stats?.steps).toEqual([winStep]);
+            expect(stats?.steps).toEqual(solvedSteps);
         } finally {
             vi.useRealTimers();
         }
@@ -245,20 +255,13 @@ describe('NumbersGameElement', () => {
             document.body.appendChild(el);
             await vi.runAllTimersAsync();
 
-            const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
-            const easyStep = {
-                id: 'step-1',
-                left: 1,
-                operator: '+' as const,
-                right: 2,
-                value: easyTarget,
-            };
+            const easySolvedSteps = getSolvedStepsForRenderedRound();
             const stepsList = el.querySelector('steps-list') as HTMLElement;
             stepsList.dispatchEvent(
                 new CustomEvent('steps-changed', {
                     bubbles: true,
                     detail: {
-                        steps: [easyStep],
+                        steps: easySolvedSteps,
                     },
                 })
             );
@@ -273,27 +276,13 @@ describe('NumbersGameElement', () => {
             document.body.appendChild(el);
             await vi.runAllTimersAsync();
 
-            const normalTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
-            const normalStep1 = {
-                id: 'step-1',
-                left: 1,
-                operator: '+' as const,
-                right: 2,
-                value: 3,
-            };
-            const normalStep2 = {
-                id: 'step-2',
-                left: 3,
-                operator: '+' as const,
-                right: 4,
-                value: normalTarget,
-            };
+            const normalSolvedSteps = getSolvedStepsForRenderedRound();
             const stepsListNormal = el.querySelector('steps-list') as HTMLElement;
             stepsListNormal.dispatchEvent(
                 new CustomEvent('steps-changed', {
                     bubbles: true,
                     detail: {
-                        steps: [normalStep1, normalStep2],
+                        steps: normalSolvedSteps,
                     },
                 })
             );
@@ -301,10 +290,10 @@ describe('NumbersGameElement', () => {
             // Both should now be completed but with different move counts and steps
             const easyStats = getDailyPuzzleStats(dateKey, 'easy');
             const normalStats = getDailyPuzzleStats(dateKey, 'normal');
-            expect(easyStats?.moveCount).toBe(1);
-            expect(easyStats?.steps).toEqual([easyStep]);
-            expect(normalStats?.moveCount).toBe(2);
-            expect(normalStats?.steps).toEqual([normalStep1, normalStep2]);
+            expect(easyStats?.moveCount).toBe(easySolvedSteps.length);
+            expect(easyStats?.steps).toEqual(easySolvedSteps);
+            expect(normalStats?.moveCount).toBe(normalSolvedSteps.length);
+            expect(normalStats?.steps).toEqual(normalSolvedSteps);
         } finally {
             vi.useRealTimers();
         }
@@ -344,20 +333,13 @@ describe('NumbersGameElement', () => {
             document.body.appendChild(el);
             await vi.runAllTimersAsync();
 
-            const targetValue = Number(el.querySelector('target-number')?.getAttribute('value'));
-            const completedStep = {
-                id: 'step-1',
-                left: 1,
-                operator: '+' as const,
-                right: 2,
-                value: targetValue,
-            };
+            const completedSteps = getSolvedStepsForRenderedRound();
             const stepsList = el.querySelector('steps-list') as HTMLElement;
             stepsList.dispatchEvent(
                 new CustomEvent('steps-changed', {
                     bubbles: true,
                     detail: {
-                        steps: [completedStep],
+                        steps: completedSteps,
                     },
                 })
             );
@@ -387,6 +369,38 @@ describe('NumbersGameElement', () => {
         }
     });
 
+    it('ignores and clears invalid persisted daily completion steps', async () => {
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            const dateKey = '2026-04-24';
+            const key = `numbers-game:daily-stats:${dateKey}:easy`;
+
+            // Impossible restore payload: step value does not match expression result.
+            localStorage.setItem(
+                key,
+                JSON.stringify({
+                    completed: true,
+                    moveCount: 1,
+                    completedAt: '2026-04-24T12:00:00.000Z',
+                    steps: [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 99 }],
+                })
+            );
+
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            const target = el.querySelector('target-number');
+            expect(target?.hasAttribute('celebrating')).toBe(false);
+            expect(document.body.querySelector('.game-top-status')).toBeNull();
+            expect(localStorage.getItem(key)).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('restores correct daily puzzle state when changing difficulty selector', async () => {
         try {
             vi.useFakeTimers();
@@ -399,19 +413,12 @@ describe('NumbersGameElement', () => {
             document.body.appendChild(el);
             await vi.runAllTimersAsync();
 
-            const easyTarget = Number(el.querySelector('target-number')?.getAttribute('value'));
-            const easyStep = {
-                id: 'step-1',
-                left: 1,
-                operator: '+' as const,
-                right: 2,
-                value: easyTarget,
-            };
+            const easySolvedSteps = getSolvedStepsForRenderedRound();
             const stepsList = el.querySelector('steps-list') as HTMLElement;
             stepsList.dispatchEvent(
                 new CustomEvent('steps-changed', {
                     bubbles: true,
-                    detail: { steps: [easyStep] },
+                    detail: { steps: easySolvedSteps },
                 })
             );
 

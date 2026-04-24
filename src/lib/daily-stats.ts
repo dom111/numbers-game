@@ -92,6 +92,11 @@ export const isDailyPuzzleCompleted = (dateKey: string, difficulty: GameDifficul
     return stats?.completed ?? false;
 };
 
+/** Removes one daily puzzle stats record. */
+export const clearDailyPuzzleStats = (dateKey: string, difficulty: GameDifficulty): void => {
+    localStorage.removeItem(getStatsKey(dateKey, difficulty));
+};
+
 /**
  * Clears all stored daily stats (mainly for testing).
  * Use with caution!

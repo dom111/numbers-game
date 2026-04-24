@@ -93,8 +93,8 @@ Use these instructions for all code changes in this repository.
 - Daily puzzles are deterministic and generated using `src/lib/daily.ts`; same date + difficulty always produces the same puzzle.
 - Daily puzzle completion stats are persisted to `localStorage` using `src/lib/daily-stats.ts`.
 - Stats are stored per date + difficulty combination, allowing independent tracking of easy and normal daily variants.
-- When a daily game is won, `recordDailyPuzzleWin(dateKey, difficulty, moveCount)` is called from `game.ts` to persist completion state.
-- Stats include: `completed` (boolean), `moveCount` (number of steps), and `completedAt` (ISO timestamp).
+- When a daily game is won, `recordDailyPuzzleWin(dateKey, difficulty, moveCount, steps)` is called from `game.ts` to persist completion state.
+- Stats include: `completed` (boolean), `moveCount` (number of completed steps), `steps` (persisted completed-step details), and `completedAt` (ISO timestamp).
 - Only daily games trigger stats recording; random games do not record stats.
 
 ## Accessibility and keyboard behavior
