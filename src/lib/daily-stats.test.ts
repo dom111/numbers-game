@@ -26,12 +26,14 @@ describe('daily-stats', () => {
         });
 
         it('returns stored stats after a puzzle is completed', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 3);
+            const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps);
             const stats = getDailyPuzzleStats('2026-04-24', 'easy');
             expect(stats).not.toBeNull();
             expect(stats?.completed).toBe(true);
-            expect(stats?.moveCount).toBe(3);
+            expect(stats?.moveCount).toBe(1);
             expect(stats?.completedAt).toBeTruthy();
+            expect(stats?.steps).toEqual(steps);
         });
 
         it('handles malformed JSON gracefully', () => {
@@ -43,15 +45,20 @@ describe('daily-stats', () => {
 
     describe('recordDailyPuzzleWin', () => {
         it('stores completion stats with a valid moveCount', () => {
-            recordDailyPuzzleWin('2026-04-24', 'normal', 5);
+            const steps = [
+                { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
+            ];
+            recordDailyPuzzleWin('2026-04-24', 'normal', 1, steps);
             const stats = getDailyPuzzleStats('2026-04-24', 'normal');
             expect(stats?.completed).toBe(true);
-            expect(stats?.moveCount).toBe(5);
+            expect(stats?.moveCount).toBe(1);
+            expect(stats?.steps).toEqual(steps);
         });
 
         it('stores an ISO timestamp when recording a win', () => {
+            const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
             const before = new Date().toISOString();
-            recordDailyPuzzleWin('2026-04-24', 'easy', 2);
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps);
             const after = new Date().toISOString();
             const stats = getDailyPuzzleStats('2026-04-24', 'easy');
             expect(stats?.completedAt).toBeTruthy();
@@ -63,26 +70,42 @@ describe('daily-stats', () => {
         });
 
         it('allows tracking easy and normal separately for the same date', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 2);
-            recordDailyPuzzleWin('2026-04-24', 'normal', 4);
+            const easySteps = [
+                { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
+            ];
+            const normalSteps = [
+                { id: 'step-1', left: 50, operator: '+' as const, right: 75, value: 125 },
+                { id: 'step-2', left: 125, operator: '+' as const, right: 100, value: 225 },
+            ];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
+            recordDailyPuzzleWin('2026-04-24', 'normal', 2, normalSteps);
 
             const easyStats = getDailyPuzzleStats('2026-04-24', 'easy');
             const normalStats = getDailyPuzzleStats('2026-04-24', 'normal');
 
-            expect(easyStats?.moveCount).toBe(2);
-            expect(normalStats?.moveCount).toBe(4);
+            expect(easyStats?.moveCount).toBe(1);
+            expect(easyStats?.steps).toEqual(easySteps);
+            expect(normalStats?.moveCount).toBe(2);
+            expect(normalStats?.steps).toEqual(normalSteps);
         });
 
         it('overwrites previous stats if a puzzle is completed again', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 5);
+            const stepsV1 = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            const stepsV2 = [
+                { id: 'step-1', left: 5, operator: '+' as const, right: 10, value: 15 },
+                { id: 'step-2', left: 15, operator: '+' as const, right: 10, value: 25 },
+            ];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, stepsV1);
             const first = getDailyPuzzleStats('2026-04-24', 'easy');
 
-            // Simulate completing it again (unlikely but good to be safe)
-            recordDailyPuzzleWin('2026-04-24', 'easy', 3);
+            // Simulate completing it again with different steps
+            recordDailyPuzzleWin('2026-04-24', 'easy', 2, stepsV2);
             const second = getDailyPuzzleStats('2026-04-24', 'easy');
 
-            expect(first?.moveCount).toBe(5);
-            expect(second?.moveCount).toBe(3);
+            expect(first?.moveCount).toBe(1);
+            expect(first?.steps).toEqual(stepsV1);
+            expect(second?.moveCount).toBe(2);
+            expect(second?.steps).toEqual(stepsV2);
         });
     });
 
@@ -93,13 +116,16 @@ describe('daily-stats', () => {
         });
 
         it('returns true after recording a win', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 3);
+            const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps);
             const completed = isDailyPuzzleCompleted('2026-04-24', 'easy');
             expect(completed).toBe(true);
         });
 
         it('tracks easy and normal independently', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 2);
+            const easySteps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            const normalSteps = [{ id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 }];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
             const easyCompleted = isDailyPuzzleCompleted('2026-04-24', 'easy');
             const normalCompleted = isDailyPuzzleCompleted('2026-04-24', 'normal');
             expect(easyCompleted).toBe(true);
@@ -109,9 +135,12 @@ describe('daily-stats', () => {
 
     describe('clearAllDailyStats', () => {
         it('removes all daily stats from localStorage', () => {
-            recordDailyPuzzleWin('2026-04-24', 'easy', 2);
-            recordDailyPuzzleWin('2026-04-24', 'normal', 4);
-            recordDailyPuzzleWin('2026-04-25', 'easy', 3);
+            const easySteps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            const normalSteps = [{ id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 }];
+            const otherSteps = [{ id: 'step-1', left: 5, operator: '+' as const, right: 5, value: 10 }];
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
+            recordDailyPuzzleWin('2026-04-24', 'normal', 1, normalSteps);
+            recordDailyPuzzleWin('2026-04-25', 'easy', 1, otherSteps);
 
             expect(isDailyPuzzleCompleted('2026-04-24', 'easy')).toBe(true);
             expect(isDailyPuzzleCompleted('2026-04-24', 'normal')).toBe(true);
@@ -131,4 +160,5 @@ describe('daily-stats', () => {
         });
     });
 });
+
 
