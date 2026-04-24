@@ -59,7 +59,7 @@ import { getHint, HintLevel } from '../lib/hint-engine.js';
 import { resolveDifficulty, serializeHash, parseHash } from '../lib/url-state.js';
 import { isInDifficultyBand, EASY_MAX_STEPS, NORMAL_MIN_STEPS } from '../lib/difficulty.js';
 import { generateDailyRound, getDailyDateKey } from '../lib/daily.js';
-import { recordDailyPuzzleWin } from '../lib/daily-stats.js';
+import { recordDailyPuzzleWin, getDailyPuzzleStats } from '../lib/daily-stats.js';
 import type {
     GameDifficulty,
     GameMode,
@@ -246,6 +246,11 @@ export class NumbersGameElement extends HTMLElement {
             this.baseNumbers = parsedNumbers ?? generateNumbers();
         }
         this.resetRoundState();
+
+        // Check if this daily puzzle was previously completed
+        if (this.mode === 'daily') {
+            this.restorePreviousDailyCompletion();
+        }
     }
 
     private getOrGenerateDailyRound(difficulty: GameDifficulty): {
@@ -264,6 +269,29 @@ export class NumbersGameElement extends HTMLElement {
         }
         this.dailyCache.set(cacheKey, { numbers: round.numbers, target: round.target });
         return round;
+    }
+
+    private restorePreviousDailyCompletion(): void {
+        const stats = getDailyPuzzleStats(this.dailyDateKey, this.difficulty);
+        if (stats?.completed && stats.steps) {
+            // Restore the completed steps
+            this.steps = [...stats.steps];
+            this.locked = true;
+
+            // Rebuild token pool to match the completed state
+            this.tokens = toTokens(this.baseNumbers);
+            this.nextTokenId = this.tokens.length + 1;
+
+            for (const step of this.steps) {
+                consumeByValue(this.tokens, step.left);
+                consumeByValue(this.tokens, step.right);
+                this.tokens.push({
+                    id: `n${this.nextTokenId++}`,
+                    value: step.value,
+                    used: false,
+                });
+            }
+        }
     }
 
     private onHashChange = (): void => {
@@ -770,7 +798,12 @@ export class NumbersGameElement extends HTMLElement {
         if (this.locked && latest) {
             // Record win for daily puzzles
             if (this.mode === 'daily') {
-                recordDailyPuzzleWin(this.dailyDateKey, this.difficulty, this.steps.length);
+                recordDailyPuzzleWin(
+                    this.dailyDateKey,
+                    this.difficulty,
+                    this.steps.length,
+                    this.steps
+                );
             }
 
             const detail: GameWonPayload = { target: this.target, steps: [...this.steps] };

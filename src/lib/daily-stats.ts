@@ -9,7 +9,7 @@
  * - Value: JSON object with completion metadata
  */
 
-import type { GameDifficulty } from '../types.js';
+import type { GameDifficulty, StepData } from '../types.js';
 
 /**
  * Metadata stored for a completed daily puzzle.
@@ -17,11 +17,13 @@ import type { GameDifficulty } from '../types.js';
  * @property completed - Whether the puzzle was solved.
  * @property moveCount - Number of steps used to complete the puzzle (null if not completed).
  * @property completedAt - ISO timestamp of when the puzzle was completed (null if not completed).
+ * @property steps - The steps used to solve the puzzle (null if not completed).
  */
 export interface DailyPuzzleStats {
     completed: boolean;
     moveCount: number | null;
     completedAt: string | null;
+    steps: StepData[] | null;
 }
 
 /**
@@ -60,17 +62,20 @@ export const getDailyPuzzleStats = (
  * @param dateKey - UTC date string in YYYY-MM-DD format
  * @param difficulty - The difficulty level ('easy' or 'normal')
  * @param moveCount - Number of steps used to reach the target
+ * @param steps - The steps used to solve the puzzle
  */
 export const recordDailyPuzzleWin = (
     dateKey: string,
     difficulty: GameDifficulty,
-    moveCount: number
+    moveCount: number,
+    steps: StepData[]
 ): void => {
     const key = getStatsKey(dateKey, difficulty);
     const stats: DailyPuzzleStats = {
         completed: true,
         moveCount,
         completedAt: new Date().toISOString(),
+        steps,
     };
     localStorage.setItem(key, JSON.stringify(stats));
 };
