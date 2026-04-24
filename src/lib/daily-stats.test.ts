@@ -126,9 +126,6 @@ describe('daily-stats', () => {
             const easySteps = [
                 { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
             ];
-            const normalSteps = [
-                { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
-            ];
             recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
             const easyCompleted = isDailyPuzzleCompleted('2026-04-24', 'easy');
             const normalCompleted = isDailyPuzzleCompleted('2026-04-24', 'normal');
@@ -170,3 +167,4 @@ describe('daily-stats', () => {
         });
     });
 });
+

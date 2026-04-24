@@ -110,6 +110,9 @@ Invalid means:
 - Selector changes also start a new generated round for the newly selected mode.
 - Hash changes that alter mode/difficulty trigger round regeneration, while a valid `difficulty` attribute still overrides hash difficulty.
 - Daily puzzle generation is deterministic by UTC date key (`YYYY-MM-DD`) + difficulty so everyone gets the same puzzle regardless of locale/timezone.
+- Daily completion is persisted per `date + difficulty` in `localStorage` (easy/normal tracked independently).
+- Re-opening a completed daily puzzle restores the completed steps, lock state, and win celebration.
+- Switching difficulty in daily mode re-checks persisted completion for that difficulty and restores win state when applicable.
 
 ## Development
 

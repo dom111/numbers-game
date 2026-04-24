@@ -107,6 +107,7 @@ Current use covers `difficulty` + `mode`, and the structure is designed to expan
     - Syncs selector changes back into hash using `history.replaceState`, skipping hash writes when `source === 'attribute'`
     - Selector-driven difficulty changes immediately trigger new-round generation in the selected mode
     - Daily mode generation is deterministic via UTC date key + difficulty and can be entered via hash or `Daily puzzle` button
+    - Daily mode checks persisted completion state by `date + difficulty`; if completed, prior steps and win lock/celebration are restored on load and on selector-driven daily difficulty changes
     - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
     - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`
@@ -140,6 +141,7 @@ Current use covers `difficulty` + `mode`, and the structure is designed to expan
     - valid `difficulty` attribute does not block hash mode updates
     - invalid hash falls back to default
     - new game respects selected difficulty
+    - completed daily state restores on reload and on daily difficulty-switch back to a completed variant
     - difficulty band helper validates `easy < 4` and `normal > 3` boundaries
 
 ## Risks and Mitigations

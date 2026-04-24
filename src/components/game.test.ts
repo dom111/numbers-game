@@ -415,7 +415,7 @@ describe('NumbersGameElement', () => {
 
             // Verify easy is celebrated
             let target = el.querySelector('target-number');
-            let initialCelebrating = target?.hasAttribute('celebrating');
+            const initialCelebrating = target?.hasAttribute('celebrating');
             expect(initialCelebrating).toBe(true);
 
             // Simulate clearing by resetting the game
