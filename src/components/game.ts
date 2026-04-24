@@ -391,6 +391,7 @@ export class NumbersGameElement extends HTMLElement {
         if (this.isGenerating) return;
 
         this.isGenerating = true;
+        this.locked = false; // Clear locked state before rendering loading message
         this.render();
 
         // Allow loading UI to paint before round generation runs.
@@ -409,6 +410,12 @@ export class NumbersGameElement extends HTMLElement {
             this.baseNumbers = nextRound.numbers;
             this.target = nextRound.target;
             this.resetRoundState();
+
+            // Check if this daily puzzle was previously completed
+            if (this.mode === 'daily') {
+                this.restorePreviousDailyCompletion();
+            }
+
             this.isGenerating = false;
             const detail: GameNewPayload = {
                 target: this.target,

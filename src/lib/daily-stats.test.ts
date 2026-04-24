@@ -123,8 +123,12 @@ describe('daily-stats', () => {
         });
 
         it('tracks easy and normal independently', () => {
-            const easySteps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
-            const normalSteps = [{ id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 }];
+            const easySteps = [
+                { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
+            ];
+            const normalSteps = [
+                { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
+            ];
             recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
             const easyCompleted = isDailyPuzzleCompleted('2026-04-24', 'easy');
             const normalCompleted = isDailyPuzzleCompleted('2026-04-24', 'normal');
@@ -135,9 +139,15 @@ describe('daily-stats', () => {
 
     describe('clearAllDailyStats', () => {
         it('removes all daily stats from localStorage', () => {
-            const easySteps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
-            const normalSteps = [{ id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 }];
-            const otherSteps = [{ id: 'step-1', left: 5, operator: '+' as const, right: 5, value: 10 }];
+            const easySteps = [
+                { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
+            ];
+            const normalSteps = [
+                { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
+            ];
+            const otherSteps = [
+                { id: 'step-1', left: 5, operator: '+' as const, right: 5, value: 10 },
+            ];
             recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps);
             recordDailyPuzzleWin('2026-04-24', 'normal', 1, normalSteps);
             recordDailyPuzzleWin('2026-04-25', 'easy', 1, otherSteps);
@@ -160,5 +170,3 @@ describe('daily-stats', () => {
         });
     });
 });
-
-
