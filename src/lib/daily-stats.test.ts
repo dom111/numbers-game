@@ -2,7 +2,7 @@
  * Test suite for daily-stats.ts — daily puzzle completion tracking
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     getDailyPuzzleStats,
     recordDailyPuzzleWin,
@@ -108,6 +108,19 @@ describe('daily-stats', () => {
             expect(second?.moveCount).toBe(2);
             expect(second?.steps).toEqual(stepsV2);
         });
+
+        it('does not throw when storage write fails', () => {
+            const setSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new Error('quota');
+            });
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
+            expect(() => recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps)).not.toThrow();
+
+            setSpy.mockRestore();
+            warnSpy.mockRestore();
+        });
     });
 
     describe('isDailyPuzzleCompleted', () => {
@@ -136,6 +149,19 @@ describe('daily-stats', () => {
     });
 
     describe('clearAllDailyStats', () => {
+        it('returns null and does not throw when storage read fails', () => {
+            const getSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new Error('blocked');
+            });
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            expect(() => getDailyPuzzleStats('2026-04-24', 'easy')).not.toThrow();
+            expect(getDailyPuzzleStats('2026-04-24', 'easy')).toBeNull();
+
+            getSpy.mockRestore();
+            warnSpy.mockRestore();
+        });
+
         it('removes only the specified daily stats entry', () => {
             const easySteps = [
                 { id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 },
