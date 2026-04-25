@@ -61,6 +61,8 @@ export const getDailyPuzzleStats = (
     try {
         const parsed = JSON.parse(stored) as Partial<DailyPuzzleStats>;
 
+        const completed = parsed.completed === true;
+
         const toPositiveInt = (v: unknown): number | null => {
             const n = typeof v === 'number' ? v : null;
             return n !== null && Number.isInteger(n) && n >= 1 ? n : null;
@@ -72,13 +74,15 @@ export const getDailyPuzzleStats = (
                 ? Math.max(0, Math.min(3, rawStars))
                 : null;
 
+        // If not completed, other fields are always null per contract.
         return {
-            completed: parsed.completed === true,
-            moveCount: toPositiveInt(parsed.moveCount),
-            shortestStepCount: toPositiveInt(parsed.shortestStepCount),
-            stars,
-            completedAt: typeof parsed.completedAt === 'string' ? parsed.completedAt : null,
-            steps: Array.isArray(parsed.steps) ? parsed.steps : null,
+            completed,
+            moveCount: completed ? toPositiveInt(parsed.moveCount) : null,
+            shortestStepCount: completed ? toPositiveInt(parsed.shortestStepCount) : null,
+            stars: completed ? stars : null,
+            completedAt:
+                completed && typeof parsed.completedAt === 'string' ? parsed.completedAt : null,
+            steps: completed && Array.isArray(parsed.steps) ? parsed.steps : null,
         };
     } catch {
         console.warn(`[numbers-game] Failed to parse daily stats for ${key}`);
