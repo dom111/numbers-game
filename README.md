@@ -77,8 +77,8 @@ Invalid means:
 - Gameplay controls are disabled while generation/validation is running.
 - The app retries target generation to prefer solvable rounds.
 - Difficulty can be chosen as `Normal` or `Easy` from the game UI.
-- Changing difficulty from the selector updates mode and immediately generates a fresh round in that mode,
-  unless a valid `difficulty` attribute is controlling the component.
+- Changing difficulty from the selector immediately generates a fresh round at the new difficulty without
+  changing the game mode (daily vs random), unless a valid `difficulty` attribute is controlling the component.
 - Difficulty bands are based on shortest-solution length from the solver:
     - `Easy`: shortest path must be `< 4` steps
     - `Normal`: shortest path must be `> 3` steps

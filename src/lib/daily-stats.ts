@@ -60,13 +60,25 @@ export const getDailyPuzzleStats = (
 
     try {
         const parsed = JSON.parse(stored) as Partial<DailyPuzzleStats>;
+
+        const toPositiveInt = (v: unknown): number | null => {
+            const n = typeof v === 'number' ? v : null;
+            return n !== null && Number.isInteger(n) && n >= 1 ? n : null;
+        };
+
+        const rawStars = typeof parsed.stars === 'number' ? parsed.stars : null;
+        const stars =
+            rawStars !== null && Number.isInteger(rawStars)
+                ? Math.max(0, Math.min(3, rawStars))
+                : null;
+
         return {
-            completed: parsed.completed ?? false,
-            moveCount: parsed.moveCount ?? null,
-            shortestStepCount: parsed.shortestStepCount ?? null,
-            stars: parsed.stars ?? null,
-            completedAt: parsed.completedAt ?? null,
-            steps: parsed.steps ?? null,
+            completed: parsed.completed === true,
+            moveCount: toPositiveInt(parsed.moveCount),
+            shortestStepCount: toPositiveInt(parsed.shortestStepCount),
+            stars,
+            completedAt: typeof parsed.completedAt === 'string' ? parsed.completedAt : null,
+            steps: Array.isArray(parsed.steps) ? parsed.steps : null,
         };
     } catch {
         console.warn(`[numbers-game] Failed to parse daily stats for ${key}`);

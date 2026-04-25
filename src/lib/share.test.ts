@@ -61,4 +61,20 @@ describe('shareText', () => {
 
         await expect(shareText('hello')).resolves.toBe('unavailable');
     });
+
+    it('returns unavailable when navigator is not defined', async () => {
+        const original = globalThis.navigator;
+        try {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: undefined,
+            });
+            await expect(shareText('hello')).resolves.toBe('unavailable');
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: original,
+            });
+        }
+    });
 });

@@ -73,6 +73,49 @@ describe('daily-stats', () => {
             const stats = getDailyPuzzleStats('2026-04-24', 'easy');
             expect(stats).toBeNull();
         });
+
+        it('sanitizes malformed numeric fields to null', () => {
+            localStorage.setItem(
+                'numbers-game:daily-stats:2026-04-24:easy',
+                JSON.stringify({
+                    completed: true,
+                    moveCount: 'not-a-number',
+                    shortestStepCount: null,
+                    stars: 'three',
+                    completedAt: '2026-04-24T00:00:00.000Z',
+                    steps: [],
+                })
+            );
+            const stats = getDailyPuzzleStats('2026-04-24', 'easy');
+            expect(stats?.moveCount).toBeNull();
+            expect(stats?.shortestStepCount).toBeNull();
+            expect(stats?.stars).toBeNull();
+        });
+
+        it('clamps star values to the 0..3 range', () => {
+            localStorage.setItem(
+                'numbers-game:daily-stats:2026-04-24:easy',
+                JSON.stringify({
+                    completed: true,
+                    moveCount: 1,
+                    shortestStepCount: 1,
+                    stars: 99,
+                    completedAt: '2026-04-24T00:00:00.000Z',
+                    steps: [],
+                })
+            );
+            const stats = getDailyPuzzleStats('2026-04-24', 'easy');
+            expect(stats?.stars).toBe(3);
+        });
+
+        it('returns completed: false when completed field is not strictly true', () => {
+            localStorage.setItem(
+                'numbers-game:daily-stats:2026-04-24:easy',
+                JSON.stringify({ completed: 1, moveCount: 1 })
+            );
+            const stats = getDailyPuzzleStats('2026-04-24', 'easy');
+            expect(stats?.completed).toBe(false);
+        });
     });
 
     describe('recordDailyPuzzleWin', () => {
