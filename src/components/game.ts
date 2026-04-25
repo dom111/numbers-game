@@ -1234,7 +1234,7 @@ export class NumbersGameElement extends HTMLElement {
             for (let i = 0; i < 3 - this.winStars; i++) {
                 const emptyStar = document.createElement('span');
                 emptyStar.className = 'star-empty';
-                emptyStar.textContent = '☆';
+                emptyStar.textContent = '⭐';
                 starsSpan.append(emptyStar);
             }
 
