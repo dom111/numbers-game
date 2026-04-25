@@ -266,6 +266,15 @@ describe('NumbersGameElement', () => {
         const rating = el.querySelector('.win-rating')?.textContent ?? '';
         expect(rating).toContain('2/3 stars');
         expect(rating).toContain('Moves 3 vs best 2');
+
+        const filledStars = Array.from(el.querySelectorAll('.star-filled')).map(
+            (star) => star.textContent
+        );
+        const emptyStars = Array.from(el.querySelectorAll('.star-empty')).map(
+            (star) => star.textContent
+        );
+        expect(filledStars).toEqual(['⭐', '⭐']);
+        expect(emptyStars).toEqual(['⭐']);
     });
 
     it('shares daily results via clipboard fallback when web-share is unavailable', async () => {
