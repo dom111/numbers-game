@@ -32,7 +32,9 @@ export const buildDailyShareText = ({
 
 /**
  * Attempts to share text with the best available browser API.
- * Falls back from Web Share API to clipboard copy.
+ * Falls back from Web Share API to clipboard copy, except when the user
+ * explicitly cancels the share sheet (AbortError/DOMException), which is
+ * treated as user intent to not share.
  */
 export const shareText = async (text: string): Promise<ShareOutcome> => {
     const nav = (globalThis.navigator ?? null) as
@@ -48,8 +50,17 @@ export const shareText = async (text: string): Promise<ShareOutcome> => {
         try {
             await nav.share({ text });
             return 'shared';
-        } catch {
-            // Fall through to clipboard fallback.
+        } catch (err: unknown) {
+            // User explicitly canceled the share sheet — do not fall back to clipboard.
+            if (
+                typeof err === 'object' &&
+                err !== null &&
+                'name' in err &&
+                (err as { name: unknown }).name === 'AbortError'
+            ) {
+                return 'unavailable';
+            }
+            // Other share errors fall through to clipboard fallback.
         }
     }
 
@@ -64,3 +75,4 @@ export const shareText = async (text: string): Promise<ShareOutcome> => {
 
     return 'unavailable';
 };
+
