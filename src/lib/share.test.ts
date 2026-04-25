@@ -69,6 +69,31 @@ describe('shareText', () => {
         }
     });
 
+    it('does not fall back to clipboard when user cancels share (AbortError)', async () => {
+        const abortError = new DOMException('User cancelled', 'AbortError');
+        const shareSpy = vi.fn().mockRejectedValue(abortError);
+        const clipboardSpy = vi.fn().mockResolvedValue(undefined);
+
+        try {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    share: shareSpy,
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
+
+            await expect(shareText('hello')).resolves.toBe('unavailable');
+            expect(shareSpy).toHaveBeenCalledOnce();
+            expect(clipboardSpy).not.toHaveBeenCalled();
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: original,
+            });
+        }
+    });
+
     it('returns unavailable when no sharing APIs are usable', async () => {
         try {
             Object.defineProperty(globalThis, 'navigator', {
