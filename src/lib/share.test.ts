@@ -19,51 +19,73 @@ describe('buildDailyShareText', () => {
 });
 
 describe('shareText', () => {
+    const original = globalThis.navigator;
+
     it('uses navigator.share when available', async () => {
         const shareSpy = vi.fn().mockResolvedValue(undefined);
         const clipboardSpy = vi.fn().mockResolvedValue(undefined);
 
-        Object.defineProperty(globalThis, 'navigator', {
-            configurable: true,
-            value: {
-                share: shareSpy,
-                clipboard: { writeText: clipboardSpy },
-            },
-        });
+        try {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    share: shareSpy,
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
 
-        await expect(shareText('hello')).resolves.toBe('shared');
-        expect(shareSpy).toHaveBeenCalledOnce();
-        expect(clipboardSpy).not.toHaveBeenCalled();
+            await expect(shareText('hello')).resolves.toBe('shared');
+            expect(shareSpy).toHaveBeenCalledOnce();
+            expect(clipboardSpy).not.toHaveBeenCalled();
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: original,
+            });
+        }
     });
 
     it('falls back to clipboard when web share fails', async () => {
         const shareSpy = vi.fn().mockRejectedValue(new Error('cancelled'));
         const clipboardSpy = vi.fn().mockResolvedValue(undefined);
 
-        Object.defineProperty(globalThis, 'navigator', {
-            configurable: true,
-            value: {
-                share: shareSpy,
-                clipboard: { writeText: clipboardSpy },
-            },
-        });
+        try {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    share: shareSpy,
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
 
-        await expect(shareText('hello')).resolves.toBe('copied');
-        expect(shareSpy).toHaveBeenCalledOnce();
-        expect(clipboardSpy).toHaveBeenCalledOnce();
+            await expect(shareText('hello')).resolves.toBe('copied');
+            expect(shareSpy).toHaveBeenCalledOnce();
+            expect(clipboardSpy).toHaveBeenCalledOnce();
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: original,
+            });
+        }
     });
 
     it('returns unavailable when no sharing APIs are usable', async () => {
-        Object.defineProperty(globalThis, 'navigator', {
-            configurable: true,
-            value: {},
-        });
+        try {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {},
+            });
 
-        await expect(shareText('hello')).resolves.toBe('unavailable');
+            await expect(shareText('hello')).resolves.toBe('unavailable');
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: original,
+            });
+        }
     });
 
     it('returns unavailable when navigator is not defined', async () => {
-        const original = globalThis.navigator;
         try {
             Object.defineProperty(globalThis, 'navigator', {
                 configurable: true,

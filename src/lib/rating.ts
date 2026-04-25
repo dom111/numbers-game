@@ -6,7 +6,7 @@
  * Returns a 0..3 star rating from completed move count vs shortest path length.
  *
  * Rules:
- * - 3 stars: matches shortest path exactly
+ * - 3 stars: matches or beats shortest path (playerSteps <= shortestSteps)
  * - 2 stars: shortest + 1..2 moves
  * - 1 star: shortest + 3 or more moves
  * - 0 stars: incomplete / invalid inputs
