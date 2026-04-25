@@ -369,6 +369,8 @@ export class NumbersGameElement extends HTMLElement {
             this.shareStatus = 'Shared result.';
         } else if (outcome === 'copied') {
             this.shareStatus = 'Copied result to clipboard.';
+        } else if (outcome === 'cancelled') {
+            this.shareStatus = 'Share canceled.';
         } else {
             this.shareStatus = 'Share APIs unavailable. Copy the text below manually.';
         }
@@ -1221,6 +1223,7 @@ export class NumbersGameElement extends HTMLElement {
             // Create star rating display with separate styling for filled/empty stars
             const starsSpan = document.createElement('span');
             starsSpan.className = 'star-rating';
+            starsSpan.setAttribute('aria-hidden', 'true');
 
             // Add filled stars
             for (let i = 0; i < this.winStars; i++) {

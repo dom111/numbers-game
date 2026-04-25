@@ -69,7 +69,7 @@ describe('shareText', () => {
         }
     });
 
-    it('does not fall back to clipboard when user cancels share (AbortError)', async () => {
+    it('returns cancelled and does not fall back to clipboard when user cancels share', async () => {
         const abortError = new DOMException('User cancelled', 'AbortError');
         const shareSpy = vi.fn().mockRejectedValue(abortError);
         const clipboardSpy = vi.fn().mockResolvedValue(undefined);
@@ -83,7 +83,7 @@ describe('shareText', () => {
                 },
             });
 
-            await expect(shareText('hello')).resolves.toBe('unavailable');
+            await expect(shareText('hello')).resolves.toBe('cancelled');
             expect(shareSpy).toHaveBeenCalledOnce();
             expect(clipboardSpy).not.toHaveBeenCalled();
         } finally {
