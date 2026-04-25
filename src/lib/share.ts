@@ -1,6 +1,6 @@
 import type { GameDifficulty } from '../types.js';
 
-export type ShareOutcome = 'shared' | 'copied' | 'unavailable';
+export type ShareOutcome = 'shared' | 'copied' | 'cancelled' | 'unavailable';
 
 export type DailySharePayload = {
     dateKey: string;
@@ -33,8 +33,8 @@ export const buildDailyShareText = ({
 /**
  * Attempts to share text with the best available browser API.
  * Falls back from Web Share API to clipboard copy, except when the user
- * explicitly cancels the share sheet (AbortError/DOMException), which is
- * treated as user intent to not share.
+ * explicitly cancels the share sheet (AbortError), which is
+ * reported as `cancelled` and does not write to the clipboard.
  */
 export const shareText = async (text: string): Promise<ShareOutcome> => {
     const nav = (globalThis.navigator ?? null) as
@@ -58,7 +58,7 @@ export const shareText = async (text: string): Promise<ShareOutcome> => {
                 'name' in err &&
                 (err as { name: unknown }).name === 'AbortError'
             ) {
-                return 'unavailable';
+                return 'cancelled';
             }
             // Other share errors fall through to clipboard fallback.
         }

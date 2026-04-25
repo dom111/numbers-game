@@ -266,6 +266,7 @@ describe('NumbersGameElement', () => {
         const rating = el.querySelector('.win-rating')?.textContent ?? '';
         expect(rating).toContain('2/3 stars');
         expect(rating).toContain('Moves 3 vs best 2');
+        expect(el.querySelector('.star-rating')?.getAttribute('aria-hidden')).toBe('true');
 
         const filledStars = Array.from(el.querySelectorAll('.star-filled')).map(
             (star) => star.textContent
@@ -315,6 +316,58 @@ describe('NumbersGameElement', () => {
             expect(clipboardSpy).toHaveBeenCalledOnce();
             const statusText = el.querySelector('.share-status')?.textContent ?? '';
             expect(statusText).toBe('Copied result to clipboard.');
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: originalNavigator,
+            });
+            vi.useRealTimers();
+        }
+    });
+
+    it('shows canceled status and does not copy when user dismisses the share sheet', async () => {
+        const originalNavigator = globalThis.navigator;
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            const shareSpy = vi
+                .fn()
+                .mockRejectedValue(new DOMException('User cancelled', 'AbortError'));
+            const clipboardSpy = vi.fn().mockResolvedValue(undefined);
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    share: shareSpy,
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
+
+            const solvedSteps = getSolvedStepsForRenderedRound();
+            const stepsList = el.querySelector('steps-list') as HTMLElement;
+            stepsList.dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: solvedSteps },
+                })
+            );
+
+            const shareButton = el.querySelector(
+                'button[data-action="share"]'
+            ) as HTMLButtonElement;
+            expect(shareButton).not.toBeNull();
+            shareButton.click();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(shareSpy).toHaveBeenCalledOnce();
+            expect(clipboardSpy).not.toHaveBeenCalled();
+            const statusText = el.querySelector('.share-status')?.textContent ?? '';
+            expect(statusText).toBe('Share canceled.');
         } finally {
             Object.defineProperty(globalThis, 'navigator', {
                 configurable: true,
