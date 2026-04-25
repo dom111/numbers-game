@@ -35,10 +35,14 @@ export const buildDailyShareText = ({
  * Falls back from Web Share API to clipboard copy.
  */
 export const shareText = async (text: string): Promise<ShareOutcome> => {
-    const nav = globalThis.navigator as Navigator & {
-        share?: (data: { text: string }) => Promise<void>;
-        clipboard?: { writeText: (value: string) => Promise<void> };
-    };
+    const nav = (globalThis.navigator ?? null) as
+        | (Navigator & {
+              share?: (data: { text: string }) => Promise<void>;
+              clipboard?: { writeText: (value: string) => Promise<void> };
+          })
+        | null;
+
+    if (!nav) return 'unavailable';
 
     if (typeof nav.share === 'function') {
         try {
