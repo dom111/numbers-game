@@ -75,4 +75,3 @@ export const shareText = async (text: string): Promise<ShareOutcome> => {
 
     return 'unavailable';
 };
-
