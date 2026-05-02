@@ -44,15 +44,6 @@ describe('HintPanelElement', () => {
         expect(text).toContain('50');
     });
 
-    it('displays a NextStep hint with result', () => {
-        el.setAttribute('numbers', JSON.stringify([5, 50]));
-        el.setAttribute('target', '250');
-        el.setAttribute('hint-level', HintLevel.NextStep);
-
-        const text = el.querySelector('.hint-text')?.textContent;
-        expect(text).toContain('250'); // Result
-    });
-
     it('displays a FullSolution hint with all steps', () => {
         el.setAttribute('numbers', JSON.stringify([5, 50, 75]));
         el.setAttribute('target', '175');

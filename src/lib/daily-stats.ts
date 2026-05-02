@@ -1,7 +1,7 @@
 /**
  * @purpose Daily puzzle completion tracking and stats management.
  *
- * Stores win state, move counts, and completion dates for daily puzzles.
+ * Stores win state, move counts, paid hint usage, and completion dates for daily puzzles.
  * Each daily puzzle (identified by dateKey + difficulty) is tracked independently.
  *
  * localStorage schema:
@@ -18,6 +18,7 @@ import type { GameDifficulty, StepData } from '../types.js';
  * @property moveCount - Number of steps used to complete the puzzle (null if not completed).
  * @property shortestStepCount - Shortest known solution length for the puzzle.
  * @property stars - Player rating based on moveCount versus shortestStepCount.
+ * @property hintCount - Number of paid hints used during the solve (second-tier or stronger hints).
  * @property completedAt - ISO timestamp of when the puzzle was completed (null if not completed).
  * @property steps - The steps used to solve the puzzle (null if not completed).
  */
@@ -26,6 +27,7 @@ export interface DailyPuzzleStats {
     moveCount: number | null;
     shortestStepCount: number | null;
     stars: number | null;
+    hintCount: number | null;
     completedAt: string | null;
     steps: StepData[] | null;
 }
@@ -68,6 +70,11 @@ export const getDailyPuzzleStats = (
             return n !== null && Number.isInteger(n) && n >= 1 ? n : null;
         };
 
+        const toNonNegativeInt = (v: unknown): number | null => {
+            const n = typeof v === 'number' ? v : null;
+            return n !== null && Number.isInteger(n) && n >= 0 ? n : null;
+        };
+
         const rawStars = typeof parsed.stars === 'number' ? parsed.stars : null;
         const stars =
             rawStars !== null && Number.isInteger(rawStars)
@@ -80,6 +87,7 @@ export const getDailyPuzzleStats = (
             moveCount: completed ? toPositiveInt(parsed.moveCount) : null,
             shortestStepCount: completed ? toPositiveInt(parsed.shortestStepCount) : null,
             stars: completed ? stars : null,
+            hintCount: completed ? (toNonNegativeInt(parsed.hintCount) ?? 0) : null,
             completedAt:
                 completed && typeof parsed.completedAt === 'string' ? parsed.completedAt : null,
             steps: completed && Array.isArray(parsed.steps) ? parsed.steps : null,
@@ -99,6 +107,7 @@ export const getDailyPuzzleStats = (
  * @param steps - The steps used to solve the puzzle
  * @param shortestStepCount - The shortest-path step length for this puzzle
  * @param stars - The player star rating for this completion
+ * @param hintCount - Number of paid hints used while solving the puzzle
  */
 export const recordDailyPuzzleWin = (
     dateKey: string,
@@ -106,7 +115,8 @@ export const recordDailyPuzzleWin = (
     moveCount: number,
     steps: StepData[],
     shortestStepCount: number | null = null,
-    stars: number | null = null
+    stars: number | null = null,
+    hintCount = 0
 ): void => {
     const key = getStatsKey(dateKey, difficulty);
     const stats: DailyPuzzleStats = {
@@ -114,6 +124,7 @@ export const recordDailyPuzzleWin = (
         moveCount,
         shortestStepCount,
         stars,
+        hintCount: Number.isInteger(hintCount) && hintCount >= 0 ? hintCount : 0,
         completedAt: new Date().toISOString(),
         steps,
     };

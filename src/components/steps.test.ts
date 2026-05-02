@@ -95,6 +95,26 @@ describe('StepsListElement', () => {
         expect(activeAfterRight.getAttribute('right')).toBe('500');
     });
 
+    it('hydrates an in-progress active step from the active-step attribute', () => {
+        el.setAttribute(
+            'active-step',
+            JSON.stringify({
+                id: 'step-1',
+                left: 5,
+                leftTokenId: 'n2',
+                operator: '×',
+            })
+        );
+
+        const active = el.querySelector('step-equation[data-role="active"]') as HTMLElement;
+        expect(active.getAttribute('id')).toBe('step-1');
+        expect(active.getAttribute('left')).toBe('5');
+        expect(active.getAttribute('left-token-id')).toBe('n2');
+        expect(active.getAttribute('operator')).toBe('×');
+        expect(active.getAttribute('right')).toBeNull();
+        expect(active.getAttribute('right-token-id')).toBeNull();
+    });
+
     it('allows removing selected numbers by clicking the same token again', () => {
         el.dispatchEvent(
             new CustomEvent('number-selected', {

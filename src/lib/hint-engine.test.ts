@@ -24,7 +24,7 @@ describe('getHint', () => {
         };
 
         expect(getHint(unsolvableState, HintLevel.NextOperands)).toBeNull();
-        expect(getHint(unsolvableState, HintLevel.NextStep)).toBeNull();
+        expect(getHint(unsolvableState, HintLevel.FullSolution)).toBeNull();
     });
 
     it('returns NextOperands hint with two numbers to combine', () => {
@@ -56,22 +56,6 @@ describe('getHint', () => {
 
         if (hint?.level === HintLevel.NextOperator) {
             expect(hint.operator).toBe('×');
-        }
-    });
-
-    it('returns NextStep hint with complete first step', () => {
-        const state: HintGameState = {
-            availableNumbers: [5, 50, 75],
-            completedSteps: [],
-            target: 175,
-        };
-
-        const hint = getHint(state, HintLevel.NextStep);
-        expect(hint).not.toBeNull();
-        expect(hint?.level).toBe(HintLevel.NextStep);
-
-        if (hint?.level === HintLevel.NextStep) {
-            expect(hint.step.result).toBe(250); // 5 × 50
         }
     });
 
@@ -112,13 +96,13 @@ describe('getHint', () => {
     });
 
     it('returns correct hint for standard Countdown example', () => {
-        const hint = getHint(baseState, HintLevel.NextStep);
+        const hint = getHint(baseState, HintLevel.FullSolution);
         expect(hint).not.toBeNull();
-        expect(hint?.level).toBe(HintLevel.NextStep);
+        expect(hint?.level).toBe(HintLevel.FullSolution);
 
-        if (hint?.level === HintLevel.NextStep) {
-            expect([25, 250]).toContain(hint.step.result);
-            expect(hint.step.operator).not.toBe('+');
+        if (hint?.level === HintLevel.FullSolution) {
+            expect([25, 250]).toContain(hint.steps[0]?.result);
+            expect(hint.steps[0]?.operator).not.toBe('+');
         }
     });
 
@@ -131,11 +115,11 @@ describe('getHint', () => {
 
         const operandsHint = getHint(state, HintLevel.NextOperands);
         const operatorHint = getHint(state, HintLevel.NextOperator);
-        const stepHint = getHint(state, HintLevel.NextStep);
-
         expect(operandsHint?.level).toBe(HintLevel.NextOperands);
         expect(operatorHint?.level).toBe(HintLevel.NextOperator);
-        expect(stepHint?.level).toBe(HintLevel.NextStep);
+
+        const solutionHint = getHint(state, HintLevel.FullSolution);
+        expect(solutionHint?.level).toBe(HintLevel.FullSolution);
     });
 
     it('returns full solution with multiple steps', () => {

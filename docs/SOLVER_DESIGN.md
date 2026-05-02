@@ -102,8 +102,8 @@ Use a canonical representation of available token values (sorted ascending) to c
 ### Phase 3: Hint System (`src/lib/hint-engine.ts`)
 
 - [x] Use solver to generate solution path
-- [x] Extract the next operands/operator/step or full solution from that path
-- [x] Support hint levels: "Next operands" → "Next operator" → "Next step" → "Full solution"
+- [x] Extract the next operands/operator or full solution from that path
+- [x] Support hint levels: "Next operands" → "Next operator" → "Full solution"
 - [x] Export `getHint(currentState: HintGameState, level: HintLevel): Hint | null`
 
 ### Phase 4: Integration (`src/components/game.ts`)
@@ -156,8 +156,11 @@ Use a canonical representation of available token values (sorted ascending) to c
 ## Current UX Notes
 
 - Hint generation is triggered only when the player clicks `Hint`.
-- Hint progression cycles through operands → operator → step → full solution.
+- Hint progression cycles through operands → operator → full solution.
 - Completing a step resets hint progression back to the first level.
+- Each successful hint request starts a 30-second cooldown before the button can be used again.
+- For daily puzzles, the operands hint is free; escalating to the operator hint (or beyond on that same
+  in-progress step) records one paid hint used in persisted stats.
 - When no hint is available and completed steps exist, the UI now suggests rolling back by removing the latest
   step and visually highlights that step row/remove control.
 - New-round validation still runs on the main thread; a Web Worker is the next logical performance upgrade.

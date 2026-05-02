@@ -41,8 +41,12 @@
  * - Not all six starting numbers are required to be used.
  * - The game is won the moment any step's result equals the target; no further steps may be taken.
  * - The supported operators are addition (+), subtraction (−), multiplication (×), and division (÷).
- * - Hint calculation is on-demand from the `Hint` button; the button cycles through increasing detail
- *   and resets after any completed step.
+ * - Hint calculation is on-demand from the `Hint` button; the button cycles through operands → operator
+ *   → full solution, and resets after any completed step.
+ * - The first hint level is free; revealing the operator (or beyond) counts as one paid hint for the
+ *   current in-progress step when tracking daily challenge stats.
+ * - Each successful hint request starts a 30-second cooldown during which the hint button is disabled
+ *   and shows a countdown.
  * - If hinting cannot progress from the current state and completed steps exist, the UI suggests removing
  *   the latest step and highlights it as rollback guidance.
  * - `New game` shows a temporary loading state while solvability validation runs.
@@ -72,6 +76,7 @@ import type {
     GameMode,
     GameNewPayload,
     GameWonPayload,
+    Operator,
     NumberSelectedPayload,
     NumberToken,
     OperatorSelectedPayload,
@@ -81,6 +86,12 @@ import type {
 
 const ROUND_NUMBER_ATTEMPTS = 20;
 const ROUND_TARGET_ATTEMPTS = 20;
+const HINT_COOLDOWN_MS = 30_000;
+const HINT_LEVEL_SEQUENCE = [
+    HintLevel.NextOperands,
+    HintLevel.NextOperator,
+    HintLevel.FullSolution,
+] as const;
 
 // Re-export for backward compatibility with tests and external consumers.
 export { isInDifficultyBand };
@@ -96,6 +107,15 @@ type RoundGenerationMetrics = {
 type StepTokenRemovePayload = {
     slot: 'left' | 'right';
     tokenId: string;
+};
+
+type ActiveStepDraft = {
+    id: string;
+    left: number | null;
+    leftTokenId: string | null;
+    operator: Operator | null;
+    right: number | null;
+    rightTokenId: string | null;
 };
 
 /** Generates six random numbers by drawing without replacement from the configured pool. */
@@ -128,6 +148,25 @@ const createToken = (id: string, value: number): NumberToken => ({
     value,
     used: false,
 });
+
+const createActiveStepDraft = (count: number): ActiveStepDraft => ({
+    id: `step-${count}`,
+    left: null,
+    leftTokenId: null,
+    operator: null,
+    right: null,
+    rightTokenId: null,
+});
+
+const parsePositiveStepValue = (raw: string | null): number | null => {
+    if (!raw) return null;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed >= 1 ? parsed : null;
+};
+
+const parseOperatorValue = (raw: string | null): Operator | null => {
+    return raw === '+' || raw === '-' || raw === '×' || raw === '÷' ? raw : null;
+};
 
 const toTokens = (values: number[]): NumberToken[] =>
     values.map((value, index) => createToken(`n${index + 1}`, value));
@@ -165,6 +204,8 @@ export class NumbersGameElement extends HTMLElement {
 
     private selectedTokenIds: string[] = [];
 
+    private activeStepDraft: ActiveStepDraft = createActiveStepDraft(1);
+
     private hintLevel: HintLevel = HintLevel.NextOperands;
 
     private currentHint: string = '';
@@ -174,6 +215,16 @@ export class NumbersGameElement extends HTMLElement {
     private isGenerating = false;
 
     private generationTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    private hintCooldownInterval: ReturnType<typeof setInterval> | null = null;
+
+    private hintCooldownExpiresAt = 0;
+
+    private hintCooldownRemainingSeconds = 0;
+
+    private dailyHintCount = 0;
+
+    private paidHintAppliedForCurrentProgress = false;
 
     private winShortestStepCount: number | null = null;
 
@@ -200,6 +251,7 @@ export class NumbersGameElement extends HTMLElement {
 
     disconnectedCallback(): void {
         this.clearGenerationTimeout();
+        this.clearHintCooldown();
         this.clearTopWinBanner();
         this.removeEventListener('number-selected', this.onNumberSelected as EventListener);
         this.removeEventListener('operator-selected', this.onOperatorSelected as EventListener);
@@ -301,6 +353,7 @@ export class NumbersGameElement extends HTMLElement {
             });
         }
 
+        this.dailyHintCount = stats.hintCount ?? 0;
         this.setWinPerformance(this.steps.length, stats.shortestStepCount, stats.stars);
     }
 
@@ -507,15 +560,26 @@ export class NumbersGameElement extends HTMLElement {
         return next.sumIntermediate < current.sumIntermediate;
     };
 
-    private resetRoundState(): void {
+    private resetRoundState(options?: {
+        preserveHintCooldown?: boolean;
+        preserveDailyHintCount?: boolean;
+    }): void {
         this.steps = [];
         this.locked = false;
         this.selectedTokenIds = [];
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
+        this.activeStepDraft = createActiveStepDraft(this.steps.length + 1);
         this.hintLevel = HintLevel.NextOperands;
         this.currentHint = '';
         this.rollbackHintStepId = null;
+        this.paidHintAppliedForCurrentProgress = false;
+        if (!options?.preserveHintCooldown) {
+            this.clearHintCooldown();
+        }
+        if (!options?.preserveDailyHintCount) {
+            this.dailyHintCount = 0;
+        }
         this.winShortestStepCount = null;
         this.winStars = null;
         this.shareStatus = '';
@@ -526,6 +590,70 @@ export class NumbersGameElement extends HTMLElement {
             clearTimeout(this.generationTimeout);
             this.generationTimeout = null;
         }
+    }
+
+    private clearHintCooldown(): void {
+        if (this.hintCooldownInterval !== null) {
+            clearInterval(this.hintCooldownInterval);
+            this.hintCooldownInterval = null;
+        }
+        this.hintCooldownExpiresAt = 0;
+        this.hintCooldownRemainingSeconds = 0;
+    }
+
+    private getHintCooldownSecondsRemaining(now = this.getTimingNow()): number {
+        if (this.hintCooldownExpiresAt <= now) {
+            return 0;
+        }
+
+        return Math.ceil((this.hintCooldownExpiresAt - now) / 1000);
+    }
+
+    private updateHintCooldown = (): void => {
+        const nextRemaining = this.getHintCooldownSecondsRemaining();
+        if (nextRemaining === this.hintCooldownRemainingSeconds) {
+            return;
+        }
+
+        this.hintCooldownRemainingSeconds = nextRemaining;
+        if (nextRemaining <= 0) {
+            this.clearHintCooldown();
+        }
+
+        this.render();
+    };
+
+    private startHintCooldown(): void {
+        this.hintCooldownExpiresAt = this.getTimingNow() + HINT_COOLDOWN_MS;
+        this.hintCooldownRemainingSeconds = Math.ceil(HINT_COOLDOWN_MS / 1000);
+
+        if (this.hintCooldownInterval !== null) {
+            clearInterval(this.hintCooldownInterval);
+        }
+
+        this.hintCooldownInterval = setInterval(() => {
+            if (!this.isConnected) {
+                this.clearHintCooldown();
+                return;
+            }
+
+            this.updateHintCooldown();
+        }, 1000);
+    }
+
+    private getNextHintLevel(level: HintLevel): HintLevel {
+        const currentIndex = HINT_LEVEL_SEQUENCE.indexOf(level);
+        if (currentIndex < 0) {
+            return HintLevel.NextOperands;
+        }
+
+        return HINT_LEVEL_SEQUENCE[(currentIndex + 1) % HINT_LEVEL_SEQUENCE.length];
+    }
+
+    private getHintButtonText(): string {
+        return this.hintCooldownRemainingSeconds > 0
+            ? `Hint (${this.hintCooldownRemainingSeconds}s)`
+            : 'Hint';
     }
 
     private startNewGameGeneration(): void {
@@ -582,6 +710,23 @@ export class NumbersGameElement extends HTMLElement {
         if (leftId) nextSelected.push(leftId);
         if (rightId) nextSelected.push(rightId);
         this.selectedTokenIds = nextSelected;
+    }
+
+    private syncActiveStepDraftFromDom(): void {
+        const activeStep = this.querySelector('steps-list step-equation[data-role="active"]');
+        if (!activeStep) {
+            this.activeStepDraft = createActiveStepDraft(this.steps.length + 1);
+            return;
+        }
+
+        this.activeStepDraft = {
+            id: activeStep.getAttribute('id') ?? `step-${this.steps.length + 1}`,
+            left: parsePositiveStepValue(activeStep.getAttribute('left')),
+            leftTokenId: activeStep.getAttribute('left-token-id'),
+            operator: parseOperatorValue(activeStep.getAttribute('operator')),
+            right: parsePositiveStepValue(activeStep.getAttribute('right')),
+            rightTokenId: activeStep.getAttribute('right-token-id'),
+        };
     }
 
     private syncSelectedTokensToPool(): void {
@@ -771,13 +916,20 @@ export class NumbersGameElement extends HTMLElement {
         }
 
         if (action === 'reset') {
-            this.resetRoundState();
+            this.resetRoundState({
+                preserveHintCooldown: true,
+                preserveDailyHintCount: this.mode === 'daily',
+            });
             this.dispatchEvent(new CustomEvent('game-reset', { bubbles: true, detail: {} }));
             this.render();
             return;
         }
 
         if (action === 'hint') {
+            if (this.locked || this.hintCooldownRemainingSeconds > 0) {
+                return;
+            }
+
             // Calculate hint on demand
             const availableNumbers = this.tokens.filter((t) => !t.used).map((t) => t.value);
             if (availableNumbers.length < 2) {
@@ -803,9 +955,6 @@ export class NumbersGameElement extends HTMLElement {
                     case HintLevel.NextOperator:
                         this.currentHint = `${hint.leftValue} ${hint.operator} ${hint.rightValue}`;
                         break;
-                    case HintLevel.NextStep:
-                        this.currentHint = `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
-                        break;
                     case HintLevel.FullSolution:
                         this.currentHint = `Full solution: ${hint.steps
                             .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)
@@ -813,10 +962,17 @@ export class NumbersGameElement extends HTMLElement {
                         break;
                 }
 
-                // Cycle to next hint level for next press.
-                const levels = Object.values(HintLevel);
-                const currentIndex = levels.indexOf(this.hintLevel);
-                this.hintLevel = levels[(currentIndex + 1) % levels.length];
+                if (
+                    this.mode === 'daily' &&
+                    this.hintLevel === HintLevel.NextOperator &&
+                    !this.paidHintAppliedForCurrentProgress
+                ) {
+                    this.dailyHintCount += 1;
+                    this.paidHintAppliedForCurrentProgress = true;
+                }
+
+                this.startHintCooldown();
+                this.hintLevel = this.getNextHintLevel(this.hintLevel);
             } else {
                 this.setNoHintAvailableState();
             }
@@ -900,6 +1056,7 @@ export class NumbersGameElement extends HTMLElement {
 
         // Derive selection from the active step so UI stays in sync with step-side token clearing rules.
         this.syncSelectedTokenIdsFromActiveStep();
+        this.syncActiveStepDraftFromDom();
         this.syncSelectedTokensToPool();
     };
 
@@ -918,6 +1075,8 @@ export class NumbersGameElement extends HTMLElement {
                 detail: event.detail,
             })
         );
+
+        this.syncActiveStepDraftFromDom();
     };
 
     private onStepsChanged = (event: CustomEvent<StepsChangedPayload>): void => {
@@ -929,9 +1088,11 @@ export class NumbersGameElement extends HTMLElement {
         const incoming = event.detail.steps;
         this.steps = [...incoming];
         this.selectedTokenIds = [];
+        this.activeStepDraft = createActiveStepDraft(this.steps.length + 1);
         this.hintLevel = HintLevel.NextOperands; // Reset hint level on step completion
         this.currentHint = ''; // Clear any previous hint
         this.rollbackHintStepId = null;
+        this.paidHintAppliedForCurrentProgress = false;
 
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;
@@ -960,7 +1121,8 @@ export class NumbersGameElement extends HTMLElement {
                     this.steps.length,
                     this.steps,
                     this.winShortestStepCount,
-                    this.winStars
+                    this.winStars,
+                    this.dailyHintCount
                 );
             }
 
@@ -977,13 +1139,14 @@ export class NumbersGameElement extends HTMLElement {
         }
     };
 
-    private onStepTokenRemove = (event: CustomEvent<StepTokenRemovePayload>): void => {
+    private onStepTokenRemove = (_event: CustomEvent<StepTokenRemovePayload>): void => {
         if (this.isGenerating) return;
 
         const stepsList = this.querySelector('steps-list');
-        if (!stepsList || !stepsList.contains(event.target as Node)) return;
+        if (!stepsList) return;
 
         this.syncSelectedTokenIdsFromActiveStep();
+        this.syncActiveStepDraftFromDom();
         this.syncSelectedTokensToPool();
     };
 
@@ -1090,6 +1253,7 @@ export class NumbersGameElement extends HTMLElement {
         wrapper.setAttribute('role', 'region');
         wrapper.setAttribute('aria-label', 'Numbers game board');
         const interactionLocked = this.locked || this.isGenerating;
+        const hintDisabled = interactionLocked || this.hintCooldownRemainingSeconds > 0;
 
         const targetSection = document.createElement('div');
         targetSection.className = 'target-section-with-badge';
@@ -1158,12 +1322,19 @@ export class NumbersGameElement extends HTMLElement {
 
         // Create operators section
         const operatorsSection = document.createElement('operator-buttons');
+        if (this.activeStepDraft.left !== null) {
+            operatorsSection.setAttribute('left', String(this.activeStepDraft.left));
+        }
+        if (this.activeStepDraft.right !== null) {
+            operatorsSection.setAttribute('right', String(this.activeStepDraft.right));
+        }
         if (interactionLocked) {
             operatorsSection.setAttribute('locked', '');
         }
 
         const steps = document.createElement('steps-list');
         steps.setAttribute('steps', JSON.stringify(this.steps));
+        steps.setAttribute('active-step', JSON.stringify(this.activeStepDraft));
         if (this.rollbackHintStepId) {
             steps.setAttribute('rollback-step-id', this.rollbackHintStepId);
         }
@@ -1186,9 +1357,14 @@ export class NumbersGameElement extends HTMLElement {
         const hintButton = document.createElement('button');
         hintButton.type = 'button';
         hintButton.dataset.action = 'hint';
-        hintButton.textContent = 'Hint';
-        hintButton.setAttribute('aria-label', 'Show hint');
-        hintButton.disabled = interactionLocked;
+        hintButton.textContent = this.getHintButtonText();
+        hintButton.setAttribute(
+            'aria-label',
+            this.hintCooldownRemainingSeconds > 0
+                ? `Show hint (available in ${this.hintCooldownRemainingSeconds} seconds)`
+                : 'Show hint'
+        );
+        hintButton.disabled = hintDisabled;
 
         const newGameButton = document.createElement('button');
         newGameButton.type = 'button';
@@ -1249,6 +1425,11 @@ export class NumbersGameElement extends HTMLElement {
             winSummary.append(rating);
 
             if (this.mode === 'daily') {
+                const hintSummary = document.createElement('p');
+                hintSummary.className = 'daily-hint-summary';
+                hintSummary.textContent = `Hints used: ${this.dailyHintCount}`;
+                winSummary.append(hintSummary);
+
                 const shareButton = document.createElement('button');
                 shareButton.type = 'button';
                 shareButton.dataset.action = 'share';

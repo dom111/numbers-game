@@ -41,13 +41,14 @@ describe('daily-stats', () => {
 
         it('returns stored stats after a puzzle is completed', () => {
             const steps = [{ id: 'step-1', left: 1, operator: '+' as const, right: 2, value: 3 }];
-            recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps, 1, 3);
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, steps, 1, 3, 2);
             const stats = getDailyPuzzleStats('2026-04-24', 'easy');
             expect(stats).not.toBeNull();
             expect(stats?.completed).toBe(true);
             expect(stats?.moveCount).toBe(1);
             expect(stats?.shortestStepCount).toBe(1);
             expect(stats?.stars).toBe(3);
+            expect(stats?.hintCount).toBe(2);
             expect(stats?.completedAt).toBeTruthy();
             expect(stats?.steps).toEqual(steps);
         });
@@ -66,6 +67,7 @@ describe('daily-stats', () => {
             const stats = getDailyPuzzleStats('2026-04-24', 'easy');
             expect(stats?.shortestStepCount).toBeNull();
             expect(stats?.stars).toBeNull();
+            expect(stats?.hintCount).toBe(0);
         });
 
         it('handles malformed JSON gracefully', () => {
@@ -90,6 +92,7 @@ describe('daily-stats', () => {
             expect(stats?.moveCount).toBeNull();
             expect(stats?.shortestStepCount).toBeNull();
             expect(stats?.stars).toBeNull();
+            expect(stats?.hintCount).toBe(0);
         });
 
         it('clamps star values to the 0..3 range', () => {
@@ -123,12 +126,13 @@ describe('daily-stats', () => {
             const steps = [
                 { id: 'step-1', left: 10, operator: '+' as const, right: 15, value: 25 },
             ];
-            recordDailyPuzzleWin('2026-04-24', 'normal', 1, steps, 1, 3);
+            recordDailyPuzzleWin('2026-04-24', 'normal', 1, steps, 1, 3, 1);
             const stats = getDailyPuzzleStats('2026-04-24', 'normal');
             expect(stats?.completed).toBe(true);
             expect(stats?.moveCount).toBe(1);
             expect(stats?.shortestStepCount).toBe(1);
             expect(stats?.stars).toBe(3);
+            expect(stats?.hintCount).toBe(1);
             expect(stats?.steps).toEqual(steps);
         });
 
@@ -154,16 +158,18 @@ describe('daily-stats', () => {
                 { id: 'step-1', left: 50, operator: '+' as const, right: 75, value: 125 },
                 { id: 'step-2', left: 125, operator: '+' as const, right: 100, value: 225 },
             ];
-            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps, 1, 3);
-            recordDailyPuzzleWin('2026-04-24', 'normal', 2, normalSteps, 2, 3);
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, easySteps, 1, 3, 0);
+            recordDailyPuzzleWin('2026-04-24', 'normal', 2, normalSteps, 2, 3, 2);
 
             const easyStats = getDailyPuzzleStats('2026-04-24', 'easy');
             const normalStats = getDailyPuzzleStats('2026-04-24', 'normal');
 
             expect(easyStats?.moveCount).toBe(1);
             expect(easyStats?.steps).toEqual(easySteps);
+            expect(easyStats?.hintCount).toBe(0);
             expect(normalStats?.moveCount).toBe(2);
             expect(normalStats?.steps).toEqual(normalSteps);
+            expect(normalStats?.hintCount).toBe(2);
         });
 
         it('overwrites previous stats if a puzzle is completed again', () => {
@@ -172,17 +178,19 @@ describe('daily-stats', () => {
                 { id: 'step-1', left: 5, operator: '+' as const, right: 10, value: 15 },
                 { id: 'step-2', left: 15, operator: '+' as const, right: 10, value: 25 },
             ];
-            recordDailyPuzzleWin('2026-04-24', 'easy', 1, stepsV1, 1, 3);
+            recordDailyPuzzleWin('2026-04-24', 'easy', 1, stepsV1, 1, 3, 0);
             const first = getDailyPuzzleStats('2026-04-24', 'easy');
 
             // Simulate completing it again with different steps
-            recordDailyPuzzleWin('2026-04-24', 'easy', 2, stepsV2, 1, 2);
+            recordDailyPuzzleWin('2026-04-24', 'easy', 2, stepsV2, 1, 2, 1);
             const second = getDailyPuzzleStats('2026-04-24', 'easy');
 
             expect(first?.moveCount).toBe(1);
             expect(first?.steps).toEqual(stepsV1);
+            expect(first?.hintCount).toBe(0);
             expect(second?.moveCount).toBe(2);
             expect(second?.stars).toBe(2);
+            expect(second?.hintCount).toBe(1);
             expect(second?.steps).toEqual(stepsV2);
         });
 

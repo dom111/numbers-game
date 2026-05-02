@@ -2,7 +2,7 @@
  * @purpose Hint engine for the Numbers game.
  *
  * Generates contextual hints by solving the current game state and providing
- * progressive guidance: from "next operands" to "next operator" to "full next step".
+ * progressive guidance: from "next operands" to "next operator" to "full solution".
  */
 
 import { findSolution } from './solver.js';
@@ -29,8 +29,6 @@ export enum HintLevel {
     NextOperands = 'operands',
     /** Suggest which operator to use with the selected operands */
     NextOperator = 'operator',
-    /** Provide the complete next step */
-    NextStep = 'step',
     /** Reveal the entire solution path */
     FullSolution = 'solution',
 }
@@ -55,19 +53,6 @@ export interface OperatorHint {
 }
 
 /**
- * Hint payload for "next step" level.
- */
-export interface StepHint {
-    level: HintLevel.NextStep;
-    step: {
-        left: number;
-        operator: Operator;
-        right: number;
-        result: number;
-    };
-}
-
-/**
  * Hint payload for "full solution" level.
  */
 export interface SolutionHint {
@@ -80,7 +65,7 @@ export interface SolutionHint {
     }>;
 }
 
-export type Hint = OperandsHint | OperatorHint | StepHint | SolutionHint;
+export type Hint = OperandsHint | OperatorHint | SolutionHint;
 
 /**
  * Generates a hint for the current game state at the specified level.
@@ -130,17 +115,6 @@ export const getHint = (gameState: HintGameState, level: HintLevel): Hint | null
                 leftValue: nextStep.left,
                 operator: nextStep.operator,
                 rightValue: nextStep.right,
-            };
-
-        case HintLevel.NextStep:
-            return {
-                level: HintLevel.NextStep,
-                step: {
-                    left: nextStep.left,
-                    operator: nextStep.operator,
-                    right: nextStep.right,
-                    result: nextStep.value,
-                },
             };
 
         default:

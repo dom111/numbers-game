@@ -43,6 +43,10 @@ describe('NumbersGameElement', () => {
         }
     };
 
+    const advanceHintCooldown = async (): Promise<void> => {
+        await vi.advanceTimersByTimeAsync(30_000);
+    };
+
     const getSolvedStepsForRenderedRound = (): Array<{
         id: string;
         left: number;
@@ -238,6 +242,7 @@ describe('NumbersGameElement', () => {
             expect(stats?.shortestStepCount).toBeGreaterThanOrEqual(1);
             expect(stats?.stars).toBeGreaterThanOrEqual(1);
             expect(stats?.stars).toBeLessThanOrEqual(3);
+            expect(stats?.hintCount).toBe(0);
             expect(stats?.completedAt).toBeTruthy();
             expect(stats?.steps).toEqual(solvedSteps);
         } finally {
@@ -785,48 +790,100 @@ describe('NumbersGameElement', () => {
         expect(hintText).not.toContain('25 and 25');
     });
 
-    it('prefers a shorter child-friendlier hint path for 175 from 1,5,7,9,50,75', () => {
-        el.setAttribute('target', '175');
-        el.setAttribute('numbers', '1,5,7,9,50,75');
+    it('disables the hint button with a visible countdown after showing a hint', async () => {
+        vi.useFakeTimers();
 
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+        try {
+            el.setAttribute('target', '175');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
 
-        const hintText = el.querySelector('.hint-display')?.textContent ?? '';
-        expect(hintText).not.toBe('75 + 50 = 125');
-        expect(['75 - 50 = 25', '5 × 50 = 250']).toContain(hintText);
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            const hintButton = el.querySelector('button[data-action="hint"]') as HTMLButtonElement;
+
+            expect(hintButton.textContent).toBe('Hint (30s)');
+            expect(hintButton.disabled).toBe(true);
+
+            await vi.advanceTimersByTimeAsync(1_000);
+            const afterOneSecond = el.querySelector(
+                'button[data-action="hint"]'
+            ) as HTMLButtonElement;
+            expect(afterOneSecond.textContent).toBe('Hint (29s)');
+            expect(afterOneSecond.disabled).toBe(true);
+
+            await vi.advanceTimersByTimeAsync(29_000);
+            const cooledDownButton = el.querySelector(
+                'button[data-action="hint"]'
+            ) as HTMLButtonElement;
+            expect(cooledDownButton.textContent).toBe('Hint');
+            expect(cooledDownButton.disabled).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
-    it('suggests removing the latest step when no hint is available', () => {
-        el.setAttribute('target', '175');
-        el.setAttribute('numbers', '1,5,7,9,50,75');
+    it('prefers a shorter child-friendlier full-solution hint path for 175 from 1,5,7,9,50,75', async () => {
+        vi.useFakeTimers();
 
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        expect(el.querySelector('.hint-display')?.textContent).toContain('Try using');
+        try {
+            el.setAttribute('target', '175');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
 
-        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
-            new CustomEvent('steps-changed', {
-                bubbles: true,
-                detail: {
-                    steps: [
-                        { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
-                        { id: 'step-2', left: 25, operator: '-', right: 9, value: 16 },
-                        { id: 'step-3', left: 16, operator: '+', right: 7, value: 23 },
-                        { id: 'step-4', left: 23, operator: '+', right: 5, value: 28 },
-                        { id: 'step-5', left: 28, operator: '-', right: 1, value: 27 },
-                    ],
-                },
-            })
-        );
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            await advanceHintCooldown();
 
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        expect(el.querySelector('.hint-display')?.textContent).toBe(
-            'No hint available. Try removing the latest step.'
-        );
-        expect(
-            (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
-        ).toBe('step-5');
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            await advanceHintCooldown();
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            const hintText = el.querySelector('.hint-display')?.textContent ?? '';
+            expect(hintText).toContain('Full solution:');
+            expect(hintText).not.toContain('Full solution: 75 + 50 = 125');
+            expect(hintText.includes('75 - 50 = 25') || hintText.includes('5 × 50 = 250')).toBe(
+                true
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('suggests removing the latest step when no hint is available', async () => {
+        vi.useFakeTimers();
+
+        try {
+            el.setAttribute('target', '175');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(el.querySelector('.hint-display')?.textContent).toContain('Try using');
+            await advanceHintCooldown();
+
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [
+                            { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
+                            { id: 'step-2', left: 25, operator: '-', right: 9, value: 16 },
+                            { id: 'step-3', left: 16, operator: '+', right: 7, value: 23 },
+                            { id: 'step-4', left: 23, operator: '+', right: 5, value: 28 },
+                            { id: 'step-5', left: 28, operator: '-', right: 1, value: 27 },
+                        ],
+                    },
+                })
+            );
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(el.querySelector('.hint-display')?.textContent).toBe(
+                'No hint available. Try removing the latest step.'
+            );
+            expect(
+                (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
+            ).toBe('step-5');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('suggests removing latest step when solver has no hint and >= 2 tokens remain', () => {
@@ -852,44 +909,197 @@ describe('NumbersGameElement', () => {
         ).toBe('step-1');
     });
 
-    it('clears rollback highlight when hints become available again', () => {
-        el.setAttribute('target', '175');
-        el.setAttribute('numbers', '1,5,7,9,50,75');
+    it('clears rollback highlight when hints become available again', async () => {
+        vi.useFakeTimers();
 
-        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
-            new CustomEvent('steps-changed', {
-                bubbles: true,
-                detail: {
-                    steps: [
-                        { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
-                        { id: 'step-2', left: 25, operator: '-', right: 9, value: 16 },
-                        { id: 'step-3', left: 16, operator: '+', right: 7, value: 23 },
-                        { id: 'step-4', left: 23, operator: '+', right: 5, value: 28 },
-                        { id: 'step-5', left: 28, operator: '-', right: 1, value: 27 },
-                    ],
-                },
-            })
-        );
+        try {
+            el.setAttribute('target', '175');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
 
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        expect(
-            (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
-        ).toBe('step-5');
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [
+                            { id: 'step-1', left: 75, operator: '-', right: 50, value: 25 },
+                            { id: 'step-2', left: 25, operator: '-', right: 9, value: 16 },
+                            { id: 'step-3', left: 16, operator: '+', right: 7, value: 23 },
+                            { id: 'step-4', left: 23, operator: '+', right: 5, value: 28 },
+                            { id: 'step-5', left: 28, operator: '-', right: 1, value: 27 },
+                        ],
+                    },
+                })
+            );
 
-        (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
-            new CustomEvent('steps-changed', {
-                bubbles: true,
-                detail: {
-                    steps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
-                },
-            })
-        );
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(
+                (el.querySelector('steps-list') as HTMLElement).getAttribute('rollback-step-id')
+            ).toBe('step-5');
+            await advanceHintCooldown();
 
-        (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
-        expect(el.querySelector('.hint-display')?.textContent).toContain('Try using');
-        expect(
-            (el.querySelector('steps-list') as HTMLElement).hasAttribute('rollback-step-id')
-        ).toBe(false);
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: {
+                        steps: [{ id: 'step-1', left: 75, operator: '-', right: 50, value: 25 }],
+                    },
+                })
+            );
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(el.querySelector('.hint-display')?.textContent).toContain('Try using');
+            expect(
+                (el.querySelector('steps-list') as HTMLElement).hasAttribute('rollback-step-id')
+            ).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not count the first daily hint as paid usage', async () => {
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            el.remove();
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            const solvedSteps = getSolvedStepsForRenderedRound();
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: solvedSteps },
+                })
+            );
+
+            const stats = getDailyPuzzleStats('2026-04-24', 'easy');
+            expect(stats?.hintCount).toBe(0);
+            expect(el.querySelector('.daily-hint-summary')?.textContent).toBe('Hints used: 0');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('preserves the in-progress active step while the hint cooldown rerenders the game', async () => {
+        vi.useFakeTimers();
+
+        try {
+            el.setAttribute('target', '999');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            await vi.advanceTimersByTimeAsync(500);
+            (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
+
+            let active = getActiveStep();
+            expect(active.getAttribute('left')).toBe('5');
+            expect(active.getAttribute('right')).toBeNull();
+
+            await vi.advanceTimersByTimeAsync(500);
+            (el.querySelector('numbers-pool #n5 button') as HTMLButtonElement).click();
+
+            active = getActiveStep();
+            expect(active.getAttribute('left')).toBe('5');
+            expect(active.getAttribute('right')).toBe('50');
+
+            await vi.advanceTimersByTimeAsync(500);
+            (
+                el.querySelector('operator-buttons button[data-operator="×"]') as HTMLButtonElement
+            ).click();
+
+            const completedSteps = el.querySelectorAll('steps-list step-equation[locked]');
+            expect(completedSteps).toHaveLength(1);
+
+            const resultToken = el.querySelector('numbers-pool #n7 button') as HTMLButtonElement;
+            expect(resultToken.textContent).toBe('250');
+            expect(resultToken.disabled).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('keeps removed active-step chips removed across hint-cooldown rerenders', async () => {
+        vi.useFakeTimers();
+
+        try {
+            el.setAttribute('target', '999');
+            el.setAttribute('numbers', '1,5,7,9,50,75');
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            await vi.advanceTimersByTimeAsync(500);
+            (el.querySelector('numbers-pool #n2 button') as HTMLButtonElement).click();
+
+            await vi.advanceTimersByTimeAsync(500);
+            (el.querySelector('numbers-pool #n5 button') as HTMLButtonElement).click();
+
+            let active = getActiveStep();
+            const rightChip = active.querySelector(
+                'button.step-chip[data-slot="right"]'
+            ) as HTMLButtonElement;
+            rightChip.click();
+
+            active = getActiveStep();
+            expect(active.getAttribute('left')).toBe('5');
+            expect(active.getAttribute('right')).toBeNull();
+
+            await vi.advanceTimersByTimeAsync(1_200);
+
+            const activeAfterCooldownTick = getActiveStep();
+            expect(activeAfterCooldownTick.getAttribute('left')).toBe('5');
+            expect(activeAfterCooldownTick.getAttribute('right')).toBeNull();
+
+            (
+                el.querySelector('operator-buttons button[data-operator="×"]') as HTMLButtonElement
+            ).click();
+            (el.querySelector('numbers-pool #n5 button') as HTMLButtonElement).click();
+
+            const completedSteps = el.querySelectorAll('steps-list step-equation[locked]');
+            expect(completedSteps).toHaveLength(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('counts only one paid daily hint when escalating past the free hint', async () => {
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            el.remove();
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            await advanceHintCooldown();
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(el.querySelector('.hint-display')?.textContent).not.toContain('Full solution:');
+            await advanceHintCooldown();
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            expect(el.querySelector('.hint-display')?.textContent).toContain('Full solution:');
+
+            const solvedSteps = getSolvedStepsForRenderedRound();
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: solvedSteps },
+                })
+            );
+
+            const stats = getDailyPuzzleStats('2026-04-24', 'easy');
+            expect(stats?.hintCount).toBe(1);
+            expect(el.querySelector('.daily-hint-summary')?.textContent).toBe('Hints used: 1');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('cancels pending new-game generation when element disconnects', () => {

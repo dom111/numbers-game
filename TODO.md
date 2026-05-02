@@ -12,8 +12,8 @@
 - [x] **Deployment** — Publish app to GitHub Pages at `https://dom111.github.io/numbers-game/`
 - [x] **Solution validation** — Verify a valid solution exists before starting each round to prevent unwinnable games
 - [x] **Hint mechanism** — Provide optional hints/suggestions to help younger players progress
-    - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at 4 levels
-    - [x] On-demand hint display in the game UI — `Hint` button cycles through levels
+    - [x] Core hint engine (src/lib/hint-engine.ts) — generates hints at operands/operator/full-solution levels
+    - [x] On-demand hint display in the game UI — `Hint` button cycles through levels with a 30-second cooldown
     - [x] Shortest-path solver preference — hints favor fewer steps and simpler arithmetic
     - [x] No-hint rollback guidance — suggest removing latest step and highlight it for recovery
 
@@ -48,6 +48,7 @@
         - [x] localStorage persistence of daily puzzle attempts (date, difficulty, completed, move count)
         - [x] Track completion status across easy/normal daily variants
         - [x] Restore previously completed daily state (steps + win lock/celebration) on reload and daily difficulty switching
+        - [x] Track paid hint usage independently per daily difficulty (first hint free; operator/full-solution escalation counts)
     - [x] **Star rating system** — Award stars based on move efficiency vs. shortest path
         - [x] Calculate move ratio: player moves vs. shortest solution length
         - [x] Award scoring: 3 stars (best path), 2 stars (+ 1-2 moves), 1 star (+ 3+ moves), 0 stars (incomplete)
