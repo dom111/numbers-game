@@ -319,7 +319,7 @@ describe('NumbersGameElement', () => {
             await Promise.resolve();
 
             expect(clipboardSpy).toHaveBeenCalledOnce();
-            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Hints used: 0');
+            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Paid hints used: 0');
             const statusText = el.querySelector('.share-status')?.textContent ?? '';
             expect(statusText).toBe('Copied result to clipboard.');
         } finally {
@@ -1099,6 +1099,56 @@ describe('NumbersGameElement', () => {
             expect(stats?.hintCount).toBe(1);
             expect(el.querySelector('.daily-hint-summary')?.textContent).toBe('Hints used: 1');
         } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('shares a non-zero paid hint count after using a paid daily hint', async () => {
+        const originalNavigator = globalThis.navigator;
+        try {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
+            el.remove();
+            setHash('#difficulty=easy&mode=daily');
+            el = document.createElement('numbers-game') as NumbersGameElement;
+            document.body.appendChild(el);
+            await vi.runAllTimersAsync();
+
+            const clipboardSpy = vi.fn().mockResolvedValue(undefined);
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: {
+                    clipboard: { writeText: clipboardSpy },
+                },
+            });
+
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+            await advanceHintCooldown();
+            (el.querySelector('button[data-action="hint"]') as HTMLButtonElement).click();
+
+            const solvedSteps = getSolvedStepsForRenderedRound();
+            (el.querySelector('steps-list') as HTMLElement).dispatchEvent(
+                new CustomEvent('steps-changed', {
+                    bubbles: true,
+                    detail: { steps: solvedSteps },
+                })
+            );
+
+            const shareButton = el.querySelector(
+                'button[data-action="share"]'
+            ) as HTMLButtonElement;
+            expect(shareButton).not.toBeNull();
+            shareButton.click();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(clipboardSpy).toHaveBeenCalledOnce();
+            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Paid hints used: 1');
+        } finally {
+            Object.defineProperty(globalThis, 'navigator', {
+                configurable: true,
+                value: originalNavigator,
+            });
             vi.useRealTimers();
         }
     });
