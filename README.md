@@ -55,9 +55,12 @@ Invalid means:
 - Hint requests are on-demand. Each press of the `Hint` button advances through:
     - next operands
     - next operator
-    - next full step
     - full solution
 - Completing any step resets hint progression back to the first level for the next request.
+- Each successful hint request starts a 30-second cooldown; during cooldown the `Hint` button is disabled and
+  shows the remaining seconds.
+- For daily puzzles, the first hint level is free. Escalating to the operator hint (and anything beyond it for
+  that in-progress step) counts as one paid hint used.
 - If no hint is available but completed steps exist, the UI suggests removing the latest step and highlights
   that step's row/remove control as a rollback cue.
 - Hint solutions prefer the fewest steps first; among equally short solutions they prefer simpler arithmetic and
@@ -118,7 +121,7 @@ Invalid means:
 - Hash changes that alter mode/difficulty trigger round regeneration, while a valid `difficulty` attribute still overrides hash difficulty.
 - Daily puzzle generation is deterministic by UTC date key (`YYYY-MM-DD`) + difficulty so everyone gets the same puzzle regardless of locale/timezone.
 - Daily completion is persisted per `date + difficulty` in `localStorage` (easy/normal tracked independently).
-- Daily completion stores move count, shortest-path length, and star rating so restored daily wins keep the same summary.
+- Daily completion stores move count, shortest-path length, star rating, and paid hint count so restored daily wins keep the same summary.
 - Re-opening a completed daily puzzle restores the completed steps, lock state, and win celebration.
 - Switching difficulty in daily mode re-checks persisted completion for that difficulty and restores win state when applicable.
 - Daily wins expose a `Share result` action that prefers Web Share API and falls back to clipboard copy when available.

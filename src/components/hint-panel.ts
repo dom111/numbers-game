@@ -103,9 +103,6 @@ export class HintPanelElement extends HTMLElement {
             case HintLevel.NextOperator:
                 return `${hint.leftValue} ${hint.operator} ${hint.rightValue}`;
 
-            case HintLevel.NextStep:
-                return `${hint.step.left} ${hint.step.operator} ${hint.step.right} = ${hint.step.result}`;
-
             case HintLevel.FullSolution: {
                 const steps = hint.steps
                     .map((s) => `${s.left} ${s.operator} ${s.right} = ${s.result}`)

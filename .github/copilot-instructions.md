@@ -44,9 +44,12 @@ Use these instructions for all code changes in this repository.
 - Hint level cycles per click:
     - `NextOperands`
     - `NextOperator`
-    - `NextStep`
     - `FullSolution`
 - Completing a step resets hint level to `NextOperands` and clears stale hint text.
+- Each successful hint request starts a 30-second cooldown; the `Hint` button is disabled and shows the
+  remaining countdown during that period.
+- For daily puzzles, the first hint level is free; escalating to `NextOperator` (or beyond for that same
+  in-progress step) counts as one paid hint used.
 - If no hint is available and completed steps exist, suggest removing the latest step and highlight it.
 - If no hint is available and there are no completed steps to remove, show `No hint available.`.
 - Main game UI uses on-demand hint text rendering; do not reintroduce expensive per-render solving.
@@ -93,8 +96,8 @@ Use these instructions for all code changes in this repository.
 - Daily puzzles are deterministic and generated using `src/lib/daily.ts`; same date + difficulty always produces the same puzzle.
 - Daily puzzle completion stats are persisted to `localStorage` using `src/lib/daily-stats.ts`.
 - Stats are stored per date + difficulty combination, allowing independent tracking of easy and normal daily variants.
-- When a daily game is won, `recordDailyPuzzleWin(dateKey, difficulty, moveCount, steps, shortestStepCount, stars)` is called from `game.ts` to persist completion state.
-- Stats include: `completed` (boolean), `moveCount` (completed steps), `shortestStepCount`, `stars`, `steps` (persisted completed-step details), and `completedAt` (ISO timestamp).
+- When a daily game is won, `recordDailyPuzzleWin(dateKey, difficulty, moveCount, steps, shortestStepCount, stars, hintCount)` is called from `game.ts` to persist completion state.
+- Stats include: `completed` (boolean), `moveCount` (completed steps), `shortestStepCount`, `stars`, `hintCount`, `steps` (persisted completed-step details), and `completedAt` (ISO timestamp).
 - Only daily games trigger stats recording; random games do not record stats.
 
 ## Accessibility and keyboard behavior

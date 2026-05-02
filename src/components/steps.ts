@@ -31,6 +31,7 @@
 
 import './step.js';
 import type {
+    Operator,
     NumberSelectedPayload,
     OperatorSelectedPayload,
     StepData,
@@ -63,6 +64,14 @@ const parseSteps = (raw: string | null): StepData[] => {
     }
 };
 
+const parsePositiveInt = (value: unknown): number | null => {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 1 ? value : null;
+};
+
+const parseOperator = (value: unknown): Operator | null => {
+    return value === '+' || value === '-' || value === '×' || value === '÷' ? value : null;
+};
+
 type ActiveStep = {
     id: string;
     left: number | null;
@@ -86,8 +95,47 @@ const createActiveStep = (count: number): ActiveStep => ({
     rightTokenId: null,
 });
 
+const parseActiveStep = (raw: string | null, count: number): ActiveStep => {
+    const fallback = createActiveStep(count);
+    if (!raw) return fallback;
+
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return fallback;
+
+        const candidate = parsed as Partial<{
+            id: unknown;
+            left: unknown;
+            leftTokenId: unknown;
+            operator: unknown;
+            right: unknown;
+            rightTokenId: unknown;
+        }>;
+
+        return {
+            id:
+                typeof candidate.id === 'string' && candidate.id.length > 0
+                    ? candidate.id
+                    : fallback.id,
+            left: parsePositiveInt(candidate.left),
+            leftTokenId: typeof candidate.leftTokenId === 'string' ? candidate.leftTokenId : null,
+            operator: parseOperator(candidate.operator),
+            right: parsePositiveInt(candidate.right),
+            rightTokenId:
+                typeof candidate.rightTokenId === 'string' ? candidate.rightTokenId : null,
+        };
+    } catch {
+        return fallback;
+    }
+};
+
 export class StepsListElement extends HTMLElement {
-    static readonly observedAttributes = ['steps', 'locked', 'rollback-step-id'] as const;
+    static readonly observedAttributes = [
+        'steps',
+        'locked',
+        'rollback-step-id',
+        'active-step',
+    ] as const;
 
     private steps: StepData[] = [];
 
@@ -128,7 +176,7 @@ export class StepsListElement extends HTMLElement {
 
     private hydrateFromAttributes(): void {
         this.steps = parseSteps(this.getAttribute('steps'));
-        this.activeStep = createActiveStep(this.steps.length + 1);
+        this.activeStep = parseActiveStep(this.getAttribute('active-step'), this.steps.length + 1);
         this.rollbackStepId = this.getAttribute('rollback-step-id');
     }
 
