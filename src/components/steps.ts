@@ -76,7 +76,7 @@ type ActiveStep = {
     id: string;
     left: number | null;
     leftTokenId: string | null;
-    operator: string | null;
+    operator: Operator | null;
     right: number | null;
     rightTokenId: string | null;
 };
