@@ -8,6 +8,7 @@ export type DailySharePayload = {
     stars: number;
     shortestStepCount: number;
     moveCount: number;
+    hintCount: number;
     url: string;
 };
 
@@ -21,11 +22,13 @@ export const buildDailyShareText = ({
     stars,
     shortestStepCount,
     moveCount,
+    hintCount,
     url,
 }: DailySharePayload): string => {
     return [
         `Daily numbers game ${dateKey} (${toDifficultyLabel(difficulty)}): ${stars}/3 stars`,
         `Moves: ${moveCount} (best ${shortestStepCount})`,
+        `Hints used: ${hintCount}`,
         url,
     ].join('\n');
 };

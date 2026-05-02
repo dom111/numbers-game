@@ -125,6 +125,7 @@ Invalid means:
 - Re-opening a completed daily puzzle restores the completed steps, lock state, and win celebration.
 - Switching difficulty in daily mode re-checks persisted completion for that difficulty and restores win state when applicable.
 - Daily wins expose a `Share result` action that prefers Web Share API and falls back to clipboard copy when available.
+- Shared daily text includes stars, move count vs best, and paid hints used.
 
 ## Development
 

@@ -9,11 +9,13 @@ describe('buildDailyShareText', () => {
             stars: 2,
             shortestStepCount: 2,
             moveCount: 3,
+            hintCount: 1,
             url: 'https://dom111.github.io/numbers-game/#difficulty=easy&mode=daily',
         });
 
         expect(text).toContain('Daily numbers game 2026-04-24 (Easy): 2/3 stars');
         expect(text).toContain('Moves: 3 (best 2)');
+        expect(text).toContain('Hints used: 1');
         expect(text).toContain('#difficulty=easy&mode=daily');
     });
 });

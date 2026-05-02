@@ -59,7 +59,7 @@
         - [ ] Allow completion with/without time limit, score differently
     - [x] **Share link on win** — Generate shareable URL with puzzle date, difficulty, and result
         - [x] Include star count and shortest path in share text
-        - [x] Format: `Daily numbers game <date> (<difficulty>): <stars>/3 stars\nMoves: <moves> (best <shortest>)\n<url-with-hash>`
+        - [x] Format: `Daily numbers game <date> (<difficulty>): <stars>/3 stars\nMoves: <moves> (best <shortest>)\nHints used: <hints>\n<url-with-hash>`
         - [x] Copy-to-clipboard UI for easy sharing
 - [ ] Time tracking (optionally, so as not to pressure younger players)
 
