@@ -409,6 +409,7 @@ export class NumbersGameElement extends HTMLElement {
             stars: this.winStars,
             shortestStepCount: this.winShortestStepCount,
             moveCount: this.steps.length,
+            hintCount: this.dailyHintCount,
             url: this.getDailyShareUrl(),
         });
     }
