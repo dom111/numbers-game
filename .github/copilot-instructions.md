@@ -147,3 +147,5 @@ npm test -- --run
 - Preserve existing architecture and naming unless a refactor is justified.
 - Prefer explicit, deterministic behavior over implicit heuristics.
 - When fixing reviewer feedback, validate comment correctness before applying changes.
+- For `gh` PR/comment bodies, prefer `--body-file` with a temp markdown file rather than complex heredocs
+  or interpolated strings.

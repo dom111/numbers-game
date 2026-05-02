@@ -319,6 +319,7 @@ describe('NumbersGameElement', () => {
             await Promise.resolve();
 
             expect(clipboardSpy).toHaveBeenCalledOnce();
+            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Hints used: 0');
             const statusText = el.querySelector('.share-status')?.textContent ?? '';
             expect(statusText).toBe('Copied result to clipboard.');
         } finally {
