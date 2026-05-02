@@ -15,7 +15,7 @@ describe('buildDailyShareText', () => {
 
         expect(text).toContain('Daily numbers game 2026-04-24 (Easy): 2/3 stars');
         expect(text).toContain('Moves: 3 (best 2)');
-        expect(text).toContain('Hints used: 1');
+        expect(text).toContain('Paid hints used: 1');
         expect(text).toContain('#difficulty=easy&mode=daily');
     });
 });
