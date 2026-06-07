@@ -957,7 +957,7 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('does not count the first daily hint in hint usage', async () => {
+    it('does not count the first daily hint toward hints used', async () => {
         try {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
