@@ -43,7 +43,7 @@
  * - The supported operators are addition (+), subtraction (−), multiplication (×), and division (÷).
  * - Hint calculation is on-demand from the `Hint` button; the button cycles through operands → operator
  *   → full solution, and resets after any completed step.
- * - The first hint level is free; revealing the operator (or beyond) counts as one hint usage for the
+ * - The first hint level is free; revealing the operator (or beyond) counts as one hint used for the
  *   current in-progress step when tracking daily challenge stats.
  * - Each successful hint request starts a 30-second cooldown during which the hint button is disabled
  *   and shows a countdown.
