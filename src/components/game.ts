@@ -43,7 +43,7 @@
  * - The supported operators are addition (+), subtraction (−), multiplication (×), and division (÷).
  * - Hint calculation is on-demand from the `Hint` button; the button cycles through operands → operator
  *   → full solution, and resets after any completed step.
- * - The first hint level is free; revealing the operator (or beyond) counts as one paid hint for the
+ * - The first hint level is free; revealing the operator (or beyond) counts as one hint usage for the
  *   current in-progress step when tracking daily challenge stats.
  * - Each successful hint request starts a 30-second cooldown during which the hint button is disabled
  *   and shows a countdown.
@@ -224,7 +224,7 @@ export class NumbersGameElement extends HTMLElement {
 
     private dailyHintCount = 0;
 
-    private paidHintAppliedForCurrentProgress = false;
+    private countedHintAppliedForCurrentProgress = false;
 
     private winShortestStepCount: number | null = null;
 
@@ -574,7 +574,7 @@ export class NumbersGameElement extends HTMLElement {
         this.hintLevel = HintLevel.NextOperands;
         this.currentHint = '';
         this.rollbackHintStepId = null;
-        this.paidHintAppliedForCurrentProgress = false;
+        this.countedHintAppliedForCurrentProgress = false;
         if (!options?.preserveHintCooldown) {
             this.clearHintCooldown();
         }
@@ -966,10 +966,10 @@ export class NumbersGameElement extends HTMLElement {
                 if (
                     this.mode === 'daily' &&
                     this.hintLevel === HintLevel.NextOperator &&
-                    !this.paidHintAppliedForCurrentProgress
+                    !this.countedHintAppliedForCurrentProgress
                 ) {
                     this.dailyHintCount += 1;
-                    this.paidHintAppliedForCurrentProgress = true;
+                    this.countedHintAppliedForCurrentProgress = true;
                 }
 
                 this.startHintCooldown();
@@ -1093,7 +1093,7 @@ export class NumbersGameElement extends HTMLElement {
         this.hintLevel = HintLevel.NextOperands; // Reset hint level on step completion
         this.currentHint = ''; // Clear any previous hint
         this.rollbackHintStepId = null;
-        this.paidHintAppliedForCurrentProgress = false;
+        this.countedHintAppliedForCurrentProgress = false;
 
         this.tokens = toTokens(this.baseNumbers);
         this.nextTokenId = this.tokens.length + 1;

@@ -1,7 +1,7 @@
 /**
  * @purpose Daily puzzle completion tracking and stats management.
  *
- * Stores win state, move counts, paid hint usage, and completion dates for daily puzzles.
+ * Stores win state, move counts, hint usage, and completion dates for daily puzzles.
  * Each daily puzzle (identified by dateKey + difficulty) is tracked independently.
  *
  * localStorage schema:
@@ -18,7 +18,7 @@ import type { GameDifficulty, StepData } from '../types.js';
  * @property moveCount - Number of steps used to complete the puzzle (null if not completed).
  * @property shortestStepCount - Shortest known solution length for the puzzle.
  * @property stars - Player rating based on moveCount versus shortestStepCount.
- * @property hintCount - Number of paid hints used during the solve (second-tier or stronger hints).
+ * @property hintCount - Number of counted hints used during the solve (second-tier or stronger hints).
  * @property completedAt - ISO timestamp of when the puzzle was completed (null if not completed).
  * @property steps - The steps used to solve the puzzle (null if not completed).
  */
@@ -107,7 +107,7 @@ export const getDailyPuzzleStats = (
  * @param steps - The steps used to solve the puzzle
  * @param shortestStepCount - The shortest-path step length for this puzzle
  * @param stars - The player star rating for this completion
- * @param hintCount - Number of paid hints used while solving the puzzle
+ * @param hintCount - Number of counted hints used while solving the puzzle
  */
 export const recordDailyPuzzleWin = (
     dateKey: string,
