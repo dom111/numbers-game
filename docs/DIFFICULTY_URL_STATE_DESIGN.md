@@ -111,7 +111,7 @@ Current use covers `difficulty` + `mode`, and the structure is designed to expan
     - Daily mode checks persisted completion state by `date + difficulty`; if completed, prior steps and win lock/celebration are restored on load and on selector-driven daily difficulty changes
     - Daily win summaries include shortest-path comparison (`moves` vs `best`) and star rating, persisted in daily stats for stable restore behavior
     - Daily wins expose a `Share result` action that uses Web Share API when available and clipboard fallback otherwise
-    - Shared daily text includes date, difficulty, star rating, moves vs best, and paid hints used
+    - Shared daily text includes date, difficulty, star rating, moves vs best, and hints used
     - `attributeChangedCallback` handles `difficulty` independently — does not re-roll numbers/target on difficulty-only changes
 - `src/types.ts`
     - Exports `GameDifficulty`, `RoundConfigSource`, `ResolvedRoundConfig`, `UrlGameState`

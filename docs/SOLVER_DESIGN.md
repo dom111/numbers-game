@@ -160,7 +160,7 @@ Use a canonical representation of available token values (sorted ascending) to c
 - Completing a step resets hint progression back to the first level.
 - Each successful hint request starts a 30-second cooldown before the button can be used again.
 - For daily puzzles, the operands hint is free; escalating to the operator hint (or beyond on that same
-  in-progress step) records one paid hint used in persisted stats.
+  in-progress step) records one hint used in persisted stats.
 - When no hint is available and completed steps exist, the UI now suggests rolling back by removing the latest
   step and visually highlights that step row/remove control.
 - New-round validation still runs on the main thread; a Web Worker is the next logical performance upgrade.

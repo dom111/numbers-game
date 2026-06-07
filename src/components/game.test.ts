@@ -319,7 +319,7 @@ describe('NumbersGameElement', () => {
             await Promise.resolve();
 
             expect(clipboardSpy).toHaveBeenCalledOnce();
-            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Paid hints used: 0');
+            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Hints used: 0');
             const statusText = el.querySelector('.share-status')?.textContent ?? '';
             expect(statusText).toBe('Copied result to clipboard.');
         } finally {
@@ -957,7 +957,7 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('does not count the first daily hint as paid usage', async () => {
+    it('does not count the first daily hint in hint usage', async () => {
         try {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
@@ -1067,7 +1067,7 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('counts only one paid daily hint when escalating past the free hint', async () => {
+    it('counts only one daily hint when escalating past the free hint', async () => {
         try {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'));
@@ -1103,7 +1103,7 @@ describe('NumbersGameElement', () => {
         }
     });
 
-    it('shares a non-zero paid hint count after using a paid daily hint', async () => {
+    it('shares a non-zero hint count after using a counted daily hint', async () => {
         const originalNavigator = globalThis.navigator;
         try {
             vi.useFakeTimers();
@@ -1143,7 +1143,7 @@ describe('NumbersGameElement', () => {
             await Promise.resolve();
 
             expect(clipboardSpy).toHaveBeenCalledOnce();
-            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Paid hints used: 1');
+            expect(String(clipboardSpy.mock.calls[0]?.[0] ?? '')).toContain('Hints used: 1');
         } finally {
             Object.defineProperty(globalThis, 'navigator', {
                 configurable: true,

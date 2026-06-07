@@ -49,7 +49,7 @@ Use these instructions for all code changes in this repository.
 - Each successful hint request starts a 30-second cooldown; the `Hint` button is disabled and shows the
   remaining countdown during that period.
 - For daily puzzles, the first hint level is free; escalating to `NextOperator` (or beyond for that same
-  in-progress step) counts as one paid hint used.
+  in-progress step) counts as one hint used.
 - If no hint is available and completed steps exist, suggest removing the latest step and highlight it.
 - If no hint is available and there are no completed steps to remove, show `No hint available.`.
 - Main game UI uses on-demand hint text rendering; do not reintroduce expensive per-render solving.

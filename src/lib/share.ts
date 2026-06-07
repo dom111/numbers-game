@@ -28,7 +28,7 @@ export const buildDailyShareText = ({
     return [
         `Daily numbers game ${dateKey} (${toDifficultyLabel(difficulty)}): ${stars}/3 stars`,
         `Moves: ${moveCount} (best ${shortestStepCount})`,
-        `Paid hints used: ${hintCount}`,
+        `Hints used: ${hintCount}`,
         url,
     ].join('\n');
 };
